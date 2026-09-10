@@ -9,8 +9,8 @@ __pycache__/
 venv/
 *.egg-info/
 
-# Node（仅用于生成 xlsx 的运行时依赖软链）
-node_modules/
+# Node（仅用于生成 xlsx 的运行时依赖软链，不随仓库分发）
+node_modules
 
 # Jupyter
 .ipynb_checkpoints/
