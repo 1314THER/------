@@ -9,6 +9,9 @@ __pycache__/
 venv/
 *.egg-info/
 
+# Node（仅用于生成 xlsx 的运行时依赖软链）
+node_modules/
+
 # Jupyter
 .ipynb_checkpoints/
 
@@ -29,6 +32,11 @@ temp/
 *.tmp
 ~$*.docx
 ~$*.xlsx
+
+# 求解中间产物（可由 代码/solve_p1.py 重新生成）
+输出/*.npz
+输出/*.json
+输出/*.inspect.ndjson
 
 # 编辑器
 .vscode/
