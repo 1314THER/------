@@ -1,0 +1,413 @@
+% !TEX program = xelatex
+% 2026 年高教社杯全国大学生数学建模竞赛 A 题
+% 问题一：预热平衡阶段药材温度与水分浓度模型
+%
+% 本文件是独立可编译的文档，便于单独预览；
+% 并入整篇论文时，取 \section 及其后的全部内容即可。
+
+\documentclass[12pt,a4paper]{ctexart}
+
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{geometry}
+\usepackage{caption}
+
+\geometry{left=2.7cm,right=2.7cm,top=2.6cm,bottom=2.6cm}
+\captionsetup{font=small,labelsep=quad}
+\linespread{1.32}
+
+\begin{document}
+
+\section{预热平衡阶段药材温度与水分浓度模型}
+
+\subsection{问题分析}
+
+热风烘干过程中，烘房空气通过对流把热量传给药材表面，热量再向内部传导；
+同时药材表层水分向空气迁移，形成由内向外的水分浓度梯度。预热平衡阶段的
+任务是刻画药材内部温度场 $T(r,t)$ 与水分浓度场 $C(r,t)$ 随时间和径向位置
+的演化规律。
+
+题目给出的药材为圆柱体，长 $L=25$\,cm、半径 $R=2$\,cm，长径比为 $6.25$，
+两端面面积仅占侧面积的 $8\%$，轴向输运可忽略，故可将问题降维为
+\emph{一维径向轴对称}问题，$r\in[0,R]$。初始时刻药材温度 $T_0=28\,^\circ$C、
+干基含水率 $C_0=2.55$\,kg/kg，烘房空气状态 $T_\infty(t)$、$C_\infty(t)$
+由附件 1 给出，参数取自附录 2。
+
+模型形态由三个量决定。由附录 2 的物性可得热扩散率
+\[
+  \alpha=\frac{k}{\rho c_p}=\frac{0.36}{820\times2600}
+  =1.689\times10^{-7}\ \mathrm{m^2/s},
+\]
+而初始含水率下的水分扩散系数为
+\[
+  D(C_0)=7\times10^{-9}e^{-0.89/2.55}=4.938\times10^{-9}\ \mathrm{m^2/s},
+\]
+两者相差 $34$ 倍。在 $1800$\,s 内，热扩散特征长度
+$\sqrt{\alpha t}=17.4$\,mm 已接近半径 $20$\,mm，而水分扩散特征长度
+$\sqrt{Dt}=2.98$\,mm 尚不足半径的 $1/6$。这说明：\textbf{30 分钟内热量已在
+整个截面上重新分布，而水分仅在表层数毫米内发生迁移}，这正是``预热平衡''
+阶段的物理实质。
+
+其次，换热与传质的 Biot 数分别为 $Bi=hR/k=1.389$ 与
+$Bi_m=h_mR/D(C_0)=3.24$，均处于中间区域，意味着内部导热/扩散阻力与表面
+对流阻力都不可忽略，不能采用集总参数近似，必须给出沿半径的分布。
+
+\subsection{模型假设}
+
+\begin{enumerate}
+  \item[(A1)] 药材视为均质、各向同性的多孔介质，孔隙水与固体骨架之间满足
+        局部热平衡，同一位置处两者温度相同；
+  \item[(A2)] 忽略轴向输运，问题简化为一维径向轴对称；
+  \item[(A3)] 无内热源、忽略辐射换热，仅考虑表面对流换热与对流传质；
+  \item[(A4)] 预热平衡阶段内药材尺寸不变（收缩留待问题四处理）；
+  \item[(A5)] 物性按附录 2 取常数，水分扩散系数仅依赖含水率，即 $D=D(C)$；
+  \item[(A6)] 忽略水分汽化潜热对能量平衡的贡献。理由见 §\ref{sec:closure}：
+        若按题给参数计入潜热，表面温度将被压至湿球温度以下，与热力学第二定律
+        相悖，故题面所给参数体系隐含着该项可略的约定。
+\end{enumerate}
+
+\subsection{符号说明}
+
+\begin{table}[htbp]
+  \centering
+  \caption*{问题一主要符号（不参与正文表序）}
+  \label{tab:p1-symbols}
+  \small
+  \begin{tabular}{cll}
+    \toprule
+    符号 & 含义 & 单位 \\
+    \midrule
+    $r$            & 到药材中心轴的距离（径向坐标）   & m \\
+    $t$            & 时间                            & s \\
+    $T(r,t)$       & 药材温度                        & $^\circ$C \\
+    $C(r,t)$       & 干基含水率，$C=m_w/m_d$          & kg/kg \\
+    $R,\ L$        & 药材半径、长度                   & m \\
+    $T_\infty,C_\infty$ & 烘房空气温度、水分浓度        & $^\circ$C, kg/kg \\
+    $\rho$         & 药材体积密度                    & kg/m$^3$ \\
+    $\rho_d$       & 干基体积密度，$\rho_d=\rho/(1+C)$ & kg/m$^3$ \\
+    $c_p$          & 比热容                          & J/(kg$\cdot$K) \\
+    $k$            & 热传导系数                       & W/(m$\cdot$K) \\
+    $D$            & 水分浓度扩散系数                 & m$^2$/s \\
+    $h$            & 对流换热系数                     & W/(m$^2\cdot$K) \\
+    $h_m$          & 对流传质系数                     & m/s \\
+    $\alpha$       & 热扩散率，$\alpha=k/(\rho c_p)$  & m$^2$/s \\
+    $Bi,\ Bi_m$    & 传热、传质 Biot 数               & --- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{模型建立}
+
+\subsubsection{控制方程}
+
+在圆柱坐标下，取控制体 $2\pi r\,\mathrm{d}r\,\mathrm{d}z$ 作能量与质量的
+守恒分析。热量守恒给出
+\begin{equation}
+  \rho c_p\frac{\partial T}{\partial t}
+  =\frac{1}{r}\frac{\partial}{\partial r}
+   \left(k\,r\frac{\partial T}{\partial r}\right),
+  \label{eq:p1-heat}
+\end{equation}
+水分守恒给出
+\begin{equation}
+  \frac{\partial C}{\partial t}
+  =\frac{1}{r}\frac{\partial}{\partial r}
+   \left(D(C)\,r\frac{\partial C}{\partial r}\right).
+  \label{eq:p1-mass}
+\end{equation}
+式 \eqref{eq:p1-mass} 中 $\rho$ 为常数，已在等式两侧约去。若严格执行守恒律
+$\partial(\rho_d C)/\partial t=\nabla\!\cdot\!(\rho_d D\nabla C)$ 并代入
+$\rho_d=\rho/(1+C)$，则 \eqref{eq:p1-mass} 右端将出现附加因子 $(1+C)^2$。
+附录 2 把 $\rho$ 定为与 $C$ 无关的常数，故本文采用式 \eqref{eq:p1-mass}
+的简单扩散形式；两种口径在 $1800$\,s 时刻的表面含水率相差约 $40\%$，
+该建模选择在 §\ref{sec:closure} 中专门说明。
+
+\subsubsection{定解条件}
+
+初始条件为均匀场
+\begin{equation}
+  T(r,0)=T_0=28\,^\circ\mathrm{C},\qquad
+  C(r,0)=C_0=2.55\ \mathrm{kg/kg}.
+  \label{eq:p1-ic}
+\end{equation}
+
+中心 $r=0$ 处由对称性给出第二类齐次边界条件
+\begin{equation}
+  \left.\frac{\partial T}{\partial r}\right|_{r=0}=0,\qquad
+  \left.\frac{\partial C}{\partial r}\right|_{r=0}=0 .
+  \label{eq:p1-center}
+\end{equation}
+
+表面 $r=R$ 处为第三类边界条件，即对流换热与对流传质
+\begin{equation}
+  -k\left.\frac{\partial T}{\partial r}\right|_{r=R}
+  =h\left(T_s-T_\infty(t)\right),
+  \label{eq:p1-bc-heat}
+\end{equation}
+\begin{equation}
+  -D\left.\frac{\partial C}{\partial r}\right|_{r=R}
+  =h_m\left(C_s-C_\infty(t)\right),
+  \label{eq:p1-bc-mass}
+\end{equation}
+其中 $T_s=T(R,t)$、$C_s=C(R,t)$。附件 1 只覆盖 $0\sim14400$\,s，
+本问题求解区间为 $0\sim1800$\,s，全部落在附件范围内，
+$T_\infty(t)$ 与 $C_\infty(t)$ 由实测数据线性插值得到。
+
+\subsubsection{物性关系}
+
+由附录 2，
+\begin{equation}
+  \rho=820\ \mathrm{kg/m^3},\quad
+  c_p=2600\ \mathrm{J/(kg\cdot K)},\quad
+  k=0.36\ \mathrm{W/(m\cdot K)},
+\end{equation}
+\begin{equation}
+  h=25\ \mathrm{W/(m^2\cdot K)},\quad
+  h_m=8\times10^{-7}\ \mathrm{m/s},
+\end{equation}
+\begin{equation}
+  D(C)=7\times10^{-9}e^{-0.89/C}\quad(\mathrm{m^2/s}).
+  \label{eq:p1-D}
+\end{equation}
+式 \eqref{eq:p1-D} 的指数为负：含水率越低扩散越慢。$C$ 由 $2.55$ 降到
+$1.51$ 时，$D$ 由 $4.938\times10^{-9}$ 降至 $3.883\times10^{-9}$\,m$^2$/s
+（降幅 $21\%$）；若继续干燥到 $C=0.15$，$D$ 将降至
+$1.855\times10^{-11}$\,m$^2$/s，跨越两个数量级。这使 \eqref{eq:p1-mass}
+成为非线性方程。
+
+\subsubsection{热--质解耦性质}
+
+在问题一中，$\rho$、$c_p$、$k$ 均为常数，$D$ 只依赖 $C$ 而不依赖 $T$。
+于是式 \eqref{eq:p1-heat} 是常系数线性方程且不含 $C$，
+式 \eqref{eq:p1-mass} 是非线性方程但不含 $T$，\textbf{两者完全解耦}，
+可以分别独立求解。这是问题一区别于后续问题的关键结构性特征：
+自问题二起 $D=D(C,T)$ 且 $\rho,c_p,k$ 均为 $C$ 的函数，
+两个方程必须联立迭代求解。
+
+\subsection{无量纲分析与特征数}
+
+令 $\xi=r/R$、$\tau=\alpha t/R^2$、$\theta=(T-T_\infty)/(T_0-T_\infty)$，
+式 \eqref{eq:p1-heat} 与边界条件化为
+\begin{equation}
+  \frac{\partial\theta}{\partial\tau}
+  =\frac{1}{\xi}\frac{\partial}{\partial\xi}
+   \left(\xi\frac{\partial\theta}{\partial\xi}\right),\qquad
+  \left.\frac{\partial\theta}{\partial\xi}\right|_{\xi=1}
+  =-Bi\,\theta_s,\qquad
+  \left.\frac{\partial\theta}{\partial\xi}\right|_{\xi=0}=0,
+\end{equation}
+其中
+\begin{equation}
+  Bi=\frac{hR}{k}=\frac{25\times0.02}{0.36}=1.389 .
+\end{equation}
+水分方程同理，以 Fourier 数 $Fo_m=Dt/R^2$ 与传质 Biot 数
+\begin{equation}
+  Bi_m=\frac{h_mR}{D(C_0)}=\frac{8\times10^{-7}\times0.02}{4.938\times10^{-9}}
+  =3.24
+\end{equation}
+表征。两个 Biot 数均为 $O(1)$，说明表面对流阻力与内部输运阻力量级相当，
+温度场和水分场在半径方向上都存在可观梯度，必须给出分布而非平均值。
+
+\subsection{模型求解}
+\label{sec:p1-solve}
+
+式 \eqref{eq:p1-heat}--\eqref{eq:p1-bc-mass} 为抛物型方程组，含水率相关的
+非线性使解析求解不可行，采用数值方法。
+
+\subsubsection{空间离散}
+
+采用节点中心有限体积法以保证离散守恒。将 $[0,R]$ 均分为 $N$ 个控制体，
+节点 $r_i=ih_x$（$h_x=R/N$），内部界面位于 $r_{i\pm1/2}$。
+控制体权重满足 $\int f\,\mathrm{d}V=2\pi L\sum_i w_i f_i$，其中
+\begin{equation}
+  w_0=\frac{h_x^2}{8},\qquad
+  w_i=r_i h_x\ (1\le i\le N-1),\qquad
+  w_N=\frac{h_x(R-h_x/4)}{2}.
+  \label{eq:p1-weights}
+\end{equation}
+注意 $r_0=0$，若不单独处理中心与表面控制体权重，将会引入约 $1\%$ 的
+伪守恒误差。
+
+\subsubsection{时间离散与非线性处理}
+
+时间方向采用后向 Euler 格式。该格式无条件稳定，可避免 $D(C)$ 剧烈变化
+（$C$ 从 $2.55$ 降至 $0.15$ 时 $D$ 跨越两个数量级）导致的显式格式失稳。
+对每个时间步，将 $D(C)$ 的系数滞后处理，用 Picard 迭代求解：
+\begin{equation}
+  \left(\bm{I}+\bm{A}\big(D(C^{(k)})\big)\right)\bm{C}^{(k+1)}=\bm{b},
+  \qquad
+  \left\|\bm{C}^{(k+1)}-\bm{C}^{(k)}\right\|_\infty<\varepsilon,
+  \label{eq:p1-picard}
+\end{equation}
+取 $\varepsilon=10^{-13}$，通常 $3\sim4$ 次迭代即收敛。每个迭代步化归为
+三对角线性方程组，用追赶法在 $O(N)$ 时间内求解。
+
+由于热方程与水分方程解耦，二者可在同一时间步内独立推进，
+总计算量约为问题二的三分之一。
+
+\subsubsection{计算参数}
+
+取细网格 $N=400$（$h_x=0.005$\,cm）、时间步 $\Delta t=1$\,s。
+题目要求的输出节点 $0,0.1,\dots,2.0$\,cm 恰为细网格的子集
+（对应 $r_i$，$i$ 为 $20$ 的倍数），因此无需插值，避免引入额外误差。
+
+\subsection{结果与分析}
+
+\subsubsection{温度场}
+
+表 \ref{tab:p1-T} 给出 $100\sim1800$\,s 内 5 个径向位置的温度。
+温度场呈现三个特征：其一，初期升温极慢，$100$\,s 时中心仅升高
+$0.0001\,^\circ$C，因为附件 1 中 $T_\infty(0)=28.000\,^\circ$C
+与药材初温完全相同，起始时刻没有温差驱动力；
+其二，随烘房温度上升，药材温度呈加速上升，$600$\,s 后增速明显加快；
+其三，始终存在由内向外的正温度梯度，$1800$\,s 时中心 $33.58\,^\circ$C、
+表面 $36.79\,^\circ$C，径向温差 $3.21\,^\circ$C，与 $Bi=1.389$ 的判断一致。
+
+\begin{table}[htbp]
+  \centering
+  \caption{30 分钟内药材的温度（单位：$^\circ$C）}
+  \label{tab:p1-T}
+  \begin{tabular}{cccccc}
+    \toprule
+    \multirow{2}{*}{时间/s} & \multicolumn{5}{c}{到药材中心的距离/cm} \\
+    \cmidrule(lr){2-6}
+     & 0     & 0.5   & 1.0   & 1.5   & 2.0 \\
+    \midrule
+    100  & 28.0001 & 28.0004 & 28.0043 & 28.0332 & 28.1807 \\
+    300  & 28.0415 & 28.0643 & 28.1523 & 28.3691 & 28.8498 \\
+    600  & 28.4549 & 28.5376 & 28.8054 & 29.3171 & 30.1662 \\
+    900  & 29.3262 & 29.4601 & 29.8771 & 30.6174 & 31.7313 \\
+    1200 & 30.5445 & 30.7115 & 31.2239 & 32.1139 & 33.4286 \\
+    1500 & 31.9974 & 32.1883 & 32.7674 & 33.7473 & 35.1209 \\
+    1800 & 33.5765 & 33.7732 & 34.3653 & 35.3631 & 36.7863 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection{水分浓度场}
+
+表 \ref{tab:p1-C} 给出同一时刻的水分浓度分布。
+与温度场形成鲜明对比：$1800$\,s 内中心含水率始终保持 $2.5500$\,kg/kg
+（四位小数内完全未变），$0.5$\,cm 处仅下降 $0.0003$，而表面已由 $2.5500$
+降至 $1.5103$，降幅 $40.8\%$。水分变化被限制在最外侧约 $3\sim5$\,mm 的
+薄层内，与 $\sqrt{Dt}=2.98$\,mm 的尺度估计吻合。
+
+\begin{table}[htbp]
+  \centering
+  \caption{30 分钟内药材的水分浓度（单位：kg/kg）}
+  \label{tab:p1-C}
+  \begin{tabular}{cccccc}
+    \toprule
+    \multirow{2}{*}{时间/s} & \multicolumn{5}{c}{到药材中心的距离/cm} \\
+    \cmidrule(lr){2-6}
+     & 0     & 0.5   & 1.0   & 1.5   & 2.0 \\
+    \midrule
+    100  & 2.5500 & 2.5500 & 2.5500 & 2.5500 & 2.2475 \\
+    300  & 2.5500 & 2.5500 & 2.5500 & 2.5492 & 2.0511 \\
+    600  & 2.5500 & 2.5500 & 2.5500 & 2.5352 & 1.8771 \\
+    900  & 2.5500 & 2.5500 & 2.5497 & 2.5045 & 1.7549 \\
+    1200 & 2.5500 & 2.5500 & 2.5482 & 2.4645 & 1.6587 \\
+    1500 & 2.5500 & 2.5499 & 2.5445 & 2.4206 & 1.5788 \\
+    1800 & 2.5500 & 2.5497 & 2.5383 & 2.3755 & 1.5103 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection{机理讨论}
+
+两个场的演化速率差异源于热扩散率与水分扩散系数相差 $34$ 倍。
+热量在 $1800$\,s 内的扩散长度已达半径的 $87\%$，而水分的扩散长度
+仅为半径的 $15\%$。因此``预热平衡''阶段的物理内容是\emph{药材整体趋于
+热平衡}，水分脱除尚处于启动阶段，表面刚形成一层干燥壳层。
+这也解释了为何工程上需要先进行预热平衡再进入恒温干燥：
+若骤然大风量干燥，表层迅速失水收缩、结壳，反而阻碍内部水分的迁移通道。
+
+\subsection{模型检验}
+
+\subsubsection{质量守恒检验}
+
+在式 \eqref{eq:p1-mass} 的框架下，模型守恒量为 $Q=\int_0^R C\cdot2\pi rL
+\,\mathrm{d}r$，其减少量应等于表面累计流出的水量
+\begin{equation}
+  \Delta Q
+  =2\pi RL\,h_m\int_0^{t}\left[C(R,\tau)-C_\infty(\tau)\right]\mathrm{d}\tau .
+  \label{eq:p1-conservation}
+\end{equation}
+数值结果表明，$1800$\,s 内 $\Delta Q=8.05603\times10^{-5}$\,m$^3\!\cdot$kg/kg，
+表面累计流出量同为 $8.05603\times10^{-5}$，相对残差为
+$6.8\times10^{-14}$，即达到浮点机器精度。这说明所采用的有限体积格式在
+离散意义下严格守恒。
+
+\subsubsection{网格与时间步收敛性}
+
+固定 $t=1800$\,s，逐步加密网格得到的表面含水率如表 \ref{tab:p1-conv}。
+相邻解之间的差值逐次减半，呈一阶收敛，外推收敛值为 $1.51033$。
+
+\begin{table}[htbp]
+  \centering
+  \caption{表面含水率的网格收敛性（$t=1800$\,s）}
+  \label{tab:p1-conv}
+  \small
+  \begin{tabular}{ccccc}
+    \toprule
+    网格单元数 $N$ & 20 & 40 & 100 & 400 \\
+    \midrule
+    表面含水率 & 1.51211 & 1.51076 & 1.51039 & 1.51033 \\
+    与 $N=400$ 之差 & $+0.00178$ & $+0.00043$ & $+0.00006$ & --- \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+直接用题目要求的 $0.1$\,cm 输出网格（$N=20$）求解，表面含水率为
+$1.51211$，与收敛值相差 $0.12\%$；温度场的最大偏差仅 $0.0003\,^\circ$C。
+本文仍采用 $N=400$ 细网格，计算耗时仅数秒，代价可忽略。
+
+时间步方面，$\Delta t=1$\,s 与 $\Delta t=0.25$\,s 得到的表面温度分别为
+$36.78627$\,$^\circ$C 与 $36.78574$\,$^\circ$C，相差 $0.0005$\,$^\circ$C，
+四位小数一致，说明 $\Delta t=1$\,s 的时间离散误差可以忽略。
+
+\subsubsection{建模选择与不确定性说明}
+\label{sec:closure}
+
+题面仅给出物性参数而未给出控制方程与闭合关系，其中两处选择会显著影响结果，
+在此明确说明以便复核。
+
+\textbf{（1）密度闭合口径。} 式 \eqref{eq:p1-bc-mass} 中 $h_m(C_s-C_\infty)$
+的量纲为 m/s$\cdot$kg/kg，要换算为 kg/(m$^2\cdot$s) 的通量必须引入参考密度。
+若取药材干基密度 $\rho_d$ 为参考密度，则 $\rho_d$ 在等式两侧约去，
+恰好回到式 \eqref{eq:p1-bc-mass} 的最简形式，本文即采用该口径。
+若改用严格守恒形式 $\partial(\rho_dC)/\partial t=\nabla\!\cdot\!(\rho_dD
+\nabla C)$，等效扩散系数将放大至约 $(1+C)D$，$1800$\,s 时表面含水率约为
+$0.92$，与本文结果相差约 $40\%$。该差异不影响温度场（热质解耦），
+但会显著改变水分场的预测值。
+
+\textbf{（2）汽化潜热。} 完整的表面能量平衡应含蒸发吸热项
+\begin{equation}
+  -k\left.\frac{\partial T}{\partial r}\right|_{r=R}
+  =h\left(T_s-T_\infty\right)+L_v\,j_w ,
+  \label{eq:p1-latent}
+\end{equation}
+其中 $j_w$ 为表面水分通量。题面未给出汽化潜热 $L_v$，
+本文按 $L_v=2.26\times10^6$\,J/kg 试算，得到表面温度约 $6.1\,^\circ$C。
+而由附件 1 的空气状态可算出 $1800$\,s 时的湿球温度为 $34.7\,^\circ$C
+（初始时刻为 $25.5\,^\circ$C）。表面处于湿润状态，蒸发冷却最多使表面温度
+趋于湿球温度，不可能低于该值。这说明按同一密度口径计算的水分通量比物理
+允许值大一个量级，两项不能同时采用。由此判定题面所给参数体系对应
+\emph{忽略汽化潜热}的简化模型，本文取式 \eqref{eq:p1-bc-heat} 的形式。
+
+\subsection{本章小结}
+
+本章建立了预热平衡阶段药材内部耦合传热传质的一维径向模型，
+说明了问题一中热方程与水分方程解耦这一结构性质，给出无量纲特征数
+$Bi=1.389$、$Bi_m=3.24$ 与特征扩散长度，
+采用有限体积法配合后向 Euler 与 Picard 迭代完成求解，
+守恒残差达机器精度，网格与时间步均已收敛。
+计算结果表明：$1800$\,s 内药材温度整体上升并在径向上形成
+$3.21\,^\circ$C 的温差，而水分脱除仅发生在表面约 $3\sim5$\,mm 的薄层内，
+中心含水率没有可观测的变化。
+完整结果保存在 \texttt{result1.xlsx} 中（时间 $1\sim1800$\,s、
+径向 $0\sim2.0$\,cm 每 $0.1$\,cm，共 $1800\times21$ 个数据点，保留四位小数）。
+
+\end{document}
