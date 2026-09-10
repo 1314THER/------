@@ -1,0 +1,35 @@
+# macOS
+.DS_Store
+._*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# MATLAB
+*.asv
+*.m~
+
+# LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+
+# 临时与中间产物
+tmp/
+temp/
+*.tmp
+~$*.docx
+~$*.xlsx
+
+# 编辑器
+.vscode/
+.idea/
