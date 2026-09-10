@@ -37,6 +37,7 @@ temp/
 输出/*.npz
 输出/*.json
 输出/*.inspect.ndjson
+输出/*.bin
 
 # 编辑器
 .vscode/
