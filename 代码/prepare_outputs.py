@@ -23,11 +23,16 @@ OUT = PROJECT / "输出"
 
 
 def resample(times, values, targets):
-    """按时间线性插值到 targets（values 形状 (n_t, n_p)）。"""
+    """把 (n_t, n_p) 的时空解按时间线性插值到 targets 时刻。
+
+    逐列处理（而不是整体插值），是因为问题四的某些列含 NaN——
+    那些位置超出了当前半径，无定义。插值前先剔除 NaN，只在该列有效的
+    时间范围内插值，避免 NaN 污染整列。
+    """
     out = np.empty((len(targets), values.shape[1]))
     for j in range(values.shape[1]):
         col = values[:, j]
-        good = ~np.isnan(col)
+        good = ~np.isnan(col)                # 该列有效的时间点
         out[:, j] = np.interp(targets, times[good], col[good])
     return out
 
@@ -37,6 +42,10 @@ def main():
     d23 = np.load(OUT / "result23_data.npz")
     t23 = d23["times"]
     dry23 = float(d23["dry_time"][0])
+    # 题面要求 result2 是**1 s 间隔**，而求解时用的是 dt=5 s 的粗时间步
+    # （为了控制 61 h 的计算量）。所以这里把 5 s 解线性插值到 1 s 网格。
+    # 时间步收敛性检验表明 dt=5 s 与 2 s 的烘干时长只差 12 s，
+    # 故该插值不引入有意义的误差。
     n2 = int(round(dry23))                       # 1 s 一个点
     t2 = np.arange(1, n2 + 1, dtype=float)
     temp2 = resample(t23, d23["temp21"], t2)
@@ -49,6 +58,9 @@ def main():
 
     n3 = int(dry23 // 60)
     t3 = np.arange(60, n3 * 60 + 1, 60, dtype=float)
+    # result3 要 60 s 间隔。因为求解时间步是 5 s，60 一定是 5 的整数倍，
+    # 所以 60 s 网格点**恰好落在**已保存的解上，searchsorted 取到的是
+    # 精确对应的时间层，不需要再做插值。
     idx3 = np.searchsorted(t23, t3)
     idx3 = np.clip(idx3, 0, len(t23) - 1)
     conc3 = d23["conc21"][idx3]

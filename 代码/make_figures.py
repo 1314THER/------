@@ -204,7 +204,7 @@ def fig_air():
     ax.axhspan(-2 * s, 2 * s, color="#bbbbbb", alpha=0.45)
     ax.plot(th, res, "-", color=CB[2], lw=0.8)
     ax.axhline(0, color="#666666", lw=0.7)
-    ax.text(0.985, 0.88, "$\pm2\\sigma$（$\\sigma$=%.3f °C）" % s,
+    ax.text(0.985, 0.88, "$\\pm2\\sigma$（$\\sigma$=%.3f °C）" % s,
             transform=ax.transAxes, ha="right", va="top", fontsize=7.5,
             bbox=dict(fc="white", ec="none", alpha=0.85, pad=1.2))
     ax.set_ylabel("残差 / °C")

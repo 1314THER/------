@@ -38,19 +38,34 @@ POSITIONS = [round(0.1 * k, 1) for k in range(21)]     # 0, 0.1, ..., 2.0 cm
 
 
 def series(sol, positions):
-    """把贴体坐标解插值到固定物理位置，并标出超出当前半径的点。"""
+    """把贴体坐标解插值到固定物理位置，并标出"已经不在药材内部"的点。
+
+    为什么需要这一步
+    ----------------
+    solve() 返回的解定义在贴体坐标 ξ=r/R(t) 上，网格节点随时间跟着材料走。
+    但题目要求的输出位置是**固定的物理距离**（0, 0.1, …, 2.0 cm），
+    所以每个时刻都要重新换算：物理位置 r_k 对应的贴体坐标是 r_k/R(t)。
+
+    为什么要 valid 掩码
+    ------------------
+    问题四里药材半径会收缩到 1.198 cm。此后 1.3～2.0 cm 这些位置已经在
+    药材外部，含水率**没有定义**（不是"等于某个值"）。这些格子必须留空，
+    而不能填 0 或用最近邻外推——所以先算出 valid，再只对内部点插值，
+    外部点保持 NaN，最终在 Excel 里体现为空白单元格。
+    """
     xi = sol["xi"]
     n_t = len(sol["times"])
     n_p = len(positions)
-    temp = np.full((n_t, n_p), np.nan)
+    temp = np.full((n_t, n_p), np.nan)      # 先全填 NaN，只覆盖有效的格子
     conc = np.full((n_t, n_p), np.nan)
     valid = np.zeros((n_t, n_p), dtype=bool)
     for k in range(n_t):
         rad = sol["radius"][k]
         target = np.asarray(positions, float) / 100.0
-        inside = target <= rad + 1e-12
+        inside = target <= rad + 1e-12       # 加 1e-12 容忍浮点比较误差
         valid[k] = inside
         if inside.any():
+            # 物理位置 → 贴体坐标，再在 ξ 网格上线性插值
             t_xi = np.clip(target[inside] / rad, 0.0, 1.0)
             temp[k, inside] = np.interp(t_xi, xi, sol["temp"][k])
             conc[k, inside] = np.interp(t_xi, xi, sol["conc"][k])
@@ -90,6 +105,10 @@ def main():
     args = ap.parse_args()
 
     if args.only in (0, 2, 3):
+        # 问题二与问题三共用同一套模型（附录 3 物性、半径恒为 2 cm），
+        # 差别只在于"取到什么时候"：问题二只要 3 h 内的结果，
+        # 问题三要一直算到中心含水率低于 0.15。算一次全长即可同时满足，
+        # 无需重复求解。
         print("=== 问题二/三：附录 3 物性，无收缩 ===")
         sol23 = solve(
             prop="p23", shrink=False, n=args.n, dt=args.dt, tend=259200.0
