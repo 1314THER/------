@@ -14,16 +14,18 @@
 
 两种水分方程口径
 ----------------
-1. form="cons"（本文口径，守恒形式）
+1. form="fick"（本文口径，经典 Fick 形式）
+       dC/dt = (1/r) * d/dr ( D*r*dC/dr )
+   未知量 C 为干基含水率，ρ 不出现；D 是针对 C 拟合的有效扩散系数。
+
+2. form="cons"（对照口径，把体积密度 ρ 写进水分方程的守恒形式）
        d(rho*C)/dt = (1/r) * d/dr ( rho*D*r*dC/dr )
    其中 rho = 650 + 128*C 取自附录 3。累计项系数为
        accum = d(rho*C)/dC = rho + C*drho/dC，
    界面通量系数为 rho*D。等价扩散系数为 rho*D/(rho + C*rho')。
 
-2. form="fick"（经典 Fick 口径）
-       dC/dt = (1/r) * d/dr ( D*r*dC/dr )
-   即不含 rho。两式的差别只在水分方程内部，温度方程完全相同，
-   因此可以直接比较"烘干时长"这一单一输出。
+两式的差别只在水分方程内部，温度方程完全相同（都含 rho*cp），
+因此可以直接比较"烘干时长"这一单一输出。
 
 两者的物理差别与选取理由见论文 §5.9（口径的闭合）与 §8.6.5（口径敏感性）。
 
@@ -32,7 +34,7 @@
     PY=/Users/sqz/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3
 
     # 单组求解：N=200、dt=5 s、本文口径
-    $PY 代码/p23_variants.py --n 200 --dt 5 --form cons
+    $PY 代码/p23_variants.py --n 200 --dt 5 --form fick
 
     # 复现论文表 10 与表 11（并行，约 5 分钟）
     $PY 代码/p23_variants.py --table
@@ -56,13 +58,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import solve_p234 as base  # noqa: E402
 
 
-def solve_variant(form="cons", thermo="coupled", n=200, dt=5.0,
+def solve_variant(form="fick", thermo="coupled", n=200, dt=5.0,
                   tend=259200.0, picard=8, tol=1e-11):
     """按指定口径求解问题三，返回中心达标时刻。
 
     参数
     ----
-    form   : "cons"（本文守恒口径）或 "fick"（经典 Fick 口径）
+    form   : "fick"（本文口径，经典 Fick 形式）或 "cons"（对照口径，
+             把体积密度 ρ 写进水分方程）
     thermo : "coupled" 解耦合温度方程；"iso_air" 令温度场等于烘房温度
              （用于检验"热质解耦"结论）；"iso50" 全程 50 °C
     n      : 径向控制体个数（求解网格，不是输出网格）
@@ -191,8 +194,8 @@ def run_table(n_list, dt_list, jobs, n_ref=100, dt_ref=5.0):
 def _fmt(rows, n_list, dt_list, n_ref=100, dt_ref=5.0):
     """打印两张表：表 10（N 的影响）与表 11（Δt 的影响）。"""
     index = {(f, n, dt): v for f, n, dt, v, _ in rows}
-    head = ("%5s %8s %10s %9s %10s %9s %9s %9s"
-            % ("N", "dt/s", "本文/s", "本文/h", "Fick/s", "Fick/h",
+    head = ("%5s %8s %10s %9s %12s %9s %9s %9s"
+            % ("N", "dt/s", "本文/s", "本文/h", "变密度/s", "变密度/h",
                "差值/s", "相对"))
     lines = []
     for title, cases in (
@@ -203,18 +206,18 @@ def _fmt(rows, n_list, dt_list, n_ref=100, dt_ref=5.0):
     ):
         lines += ["", title, head]
         for n, dt in cases:
-            cons = index.get(("cons", n, dt))
             fick = index.get(("fick", n, dt))
-            d = fick - cons
-            lines.append("%5d %8g %10.1f %9.3f %10.1f %9.3f %9.1f %8.2f%%"
-                         % (n, dt, cons, cons / 3600.0, fick, fick / 3600.0,
-                            d, 100.0 * d / cons))
+            cons = index.get(("cons", n, dt))
+            d = cons - fick
+            lines.append("%5d %8g %10.1f %9.3f %12.1f %9.3f %9.1f %8.2f%%"
+                         % (n, dt, fick, fick / 3600.0, cons, cons / 3600.0,
+                            d, 100.0 * d / fick))
     return lines
 
 
 def main():
     ap = argparse.ArgumentParser(description="问题三 网格/时间步/口径 对照")
-    ap.add_argument("--form", default="cons", choices=("cons", "fick"))
+    ap.add_argument("--form", default="fick", choices=("cons", "fick"))
     ap.add_argument("--thermo", default="coupled",
                     choices=("coupled", "iso_air", "iso50"))
     ap.add_argument("--n", type=int, default=200)

@@ -7,7 +7,7 @@
 rho、cp、k 全都随含水率变化，D 还随温度变化，两个方程真正耦合，只能来回迭代。
 
    热量:  d(rho*cp*T)/dt = (1/r) * d/dr ( k * r * dT/dr )
-   水分:  d(rho*C)/dt    = (1/r) * d/dr ( rho * D * r * dC/dr )
+   水分:  dC/dt          = (1/r) * d/dr ( D * r * dC/dr )
 
 定解条件跟问题一一样：
    T(r,0) = 28 C,  C(r,0) = 2.55 kg/kg
@@ -76,6 +76,28 @@ def props_p4(conc, temp):
     d = 4.2e-4 * np.exp(-0.30 / c) * np.exp(-3850.0 / t_k)
     return rho, drho, cp, k, d
 PROPERTY_SETS = {"p23": props_p23, "p4": props_p4}
+
+
+def _face_mean(a, kind):
+    """由两侧节点值构造界面值。
+
+    "arith"：算术平均（本文默认）；
+    "harm" ：调和平均（分片常数介质的串联阻力）；
+    "log"  ：对数平均（面内线性变化时的精确值）。
+    """
+    lo = np.maximum(a[:-1], 1e-30)
+    hi = np.maximum(a[1:], 1e-30)
+    if kind == "arith":
+        return 0.5 * (lo + hi)
+    if kind == "harm":
+        return 2.0 * lo * hi / (lo + hi)
+    if kind == "log":
+        ratio = hi / lo
+        close = np.isclose(ratio, 1.0)
+        out = (hi - lo) / np.log(ratio)
+        return np.where(close, lo, out)
+    raise ValueError("unknown face_mean: %r" % kind)
+
 
 #读取附件数据
 def _read(path):
@@ -241,6 +263,7 @@ def solve(
     tend=259200.0,
     picard=6,
     picard_tol=1e-11,
+    face_mean="arith",
 ):
     """参数
     prop : str        "p23" 用附录 3 物性（问题二、三）；"p4" 用附录 4
@@ -250,6 +273,7 @@ def solve(
     tend : float     最长求解时间 [s]（达标即提前结束）
     picard : int     Picard 最大迭代次数
     picard_tol : float  Picard 收敛判据（温度与水分的变化量）
+    face_mean : str  界面物性的平均方式 "arith"（算术）/ "harm"（调和）/ "log"（对数）
     """
     #返回字典
     #xi          贴体网格节点
@@ -298,18 +322,15 @@ def solve(
 
         #Picard迭代
         for _ in range(picard):
-            rho, drho, cp, k_cond, diff = props(conc, temp)
+            rho, _, cp, k_cond, diff = props(conc, temp)
             rho_cp = rho * cp
-            mass_face = (0.5 * (rho[:-1] + rho[1:])) * (
-                0.5 * (diff[:-1] + diff[1:])
-            )
-            heat_face = 0.5 * (k_cond[:-1] + k_cond[1:])
-            accum = rho + conc * drho
-            #水分方程
-            lam = accum * weight * r_now**2
+            mass_face = _face_mean(diff, face_mean)
+            heat_face = _face_mean(k_cond, face_mean)
+            #水分方程（经典 Fick 口径：未知量 C 为干基含水率，ρ 不出现）
+            lam = weight * r_now**2
             fc = dt * mass_face * xif / h
-            adv = dt * accum * r_now * r_dot * xi / 2.0
-            alpha = dt * accum[n] * r_now * H_MASS
+            adv = dt * r_now * r_dot * xi / 2.0
+            alpha = dt * r_now * H_MASS
             lower, diag, upper, rhs = _assemble(
                 lam, fc, adv, conc_old, alpha, c_inf, n
             )

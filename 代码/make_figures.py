@@ -340,18 +340,18 @@ def fig_p4():
 
 # ---------------------------------------------------------------- fig 6
 def fig_sens():
-    base = 60.93
+    base = 57.32
     labels = ["$D$ ±20%", "$h_m$ ±20%", "$h$ ±20%"]
-    lo = np.array([51.93, 59.88, 60.91])
-    hi = np.array([74.53, 62.62, 60.95])
+    lo = np.array([48.94, 56.27, 57.31])
+    hi = np.array([70.02, 59.04, 57.34])
     dl = 100 * (lo - base) / base
     dh = 100 * (hi - base) / base
 
     fig, axes = plt.subplots(1, 2, figsize=(W, 2.7))
     ax = axes[0]
     y = np.arange(len(labels))
-    ax.barh(y, dh, height=0.5, color=CB[1], alpha=0.9, label="参数 +20%")
-    ax.barh(y, dl, height=0.5, color=CB[0], alpha=0.9, label="参数 −20%")
+    ax.barh(y, dh, height=0.5, color=CB[1], alpha=0.9, label="参数 −20%")
+    ax.barh(y, dl, height=0.5, color=CB[0], alpha=0.9, label="参数 +20%")
     ax.axvline(0, color="#444444", lw=0.9)
     ax.set_yticks(y)
     ax.set_yticklabels(labels)
@@ -367,10 +367,10 @@ def fig_sens():
                     color="#333333")
 
     ax = axes[1]
-    names = ["本文口径\n$\\partial(\\rho C)/\\partial t$",
-             "经典 Fick\n$\\partial C/\\partial t$",
-             "变密度守恒\n$D\\to(1+C)D$"]
-    vals = np.array([60.93, 57.32, 51.39])
+    names = ["本文 Fick\n$\\partial C/\\partial t$",
+             "变密度\n$\\partial(\\rho C)/\\partial t$",
+             "干基密度守恒\n$D\\to(1+C)D$"]
+    vals = np.array([57.32, 60.93, 51.39])
     ax.barh(np.arange(3), vals, height=0.5,
             color=[CB[0], CB[2], CB[3]])
     for i, v in enumerate(vals):
