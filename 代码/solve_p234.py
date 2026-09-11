@@ -1,5 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""2026 A题 问题二/三/四 求解
+
+跟问题一最大的区别是物性不再恒定。问题一里 rho、cp、k 都是常数、D 只看含水率，
+所以温度和水分两个方程是解耦的，先后各推一步就行。问题二开始，附录3、4 给的
+rho、cp、k 全都随含水率变化，D 还随温度变化，两个方程真正耦合，只能来回迭代。
+
+   热量:  d(rho*cp*T)/dt = (1/r) * d/dr ( k * r * dT/dr )
+   水分:  d(rho*C)/dt    = (1/r) * d/dr ( rho * D * r * dC/dr )
+
+定解条件跟问题一一样：
+   T(r,0) = 28 C,  C(r,0) = 2.55 kg/kg
+   r = 0 : dT/dr = dC/dr = 0            （轴对称，不能写成定值边界）
+   r = R : -k dT/dr = h*(T_s - T_inf)   （对流换热）
+           -D dC/dr = hm*(C_s - C_inf)  （对流传质）
+
+烘房条件是分两段的：附件1 只给到 14400 s，这段用线性插值；之后算恒温干燥段，
+取 50 C 和 0.05 kg/kg。这两个数不是随手定的——附件1 最后 1 小时的平均值就是
+49.9989 和 0.04999，而且这段的升温斜率只有 0.003 C/h，说明烘房已经稳住了。
+
+问题四还要处理收缩。半径 R(t) 用附件2 的数据，走 PCHIP 插值（不能用差分，实测
+相邻差分估出来的斜率信噪比只有 2:1，噪声会被放大）。为了不让网格跟着动，把计算
+放到贴体坐标 xi = r/R(t) 上做，方程会多出一个对流项：
+
+   rho*cp*xi*R*Rdot*dT/dxi     （水分方程同理）
+
+数值方法还是老一套：节点中心有限体积 + 后向 Euler + Picard 迭代，
+每步组装成三对角方程组，用追赶法解。
+
+跑法：
+   PY=/Users/sqz/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3
+   $PY 代码/solve_p234.py --problem 3 --n 200 --dt 5 --save 输出/result3_data.npz
+   注意 --n 不写就用下面 N_FINE 的默认值，论文里的结果是 200 跑的。
+"""
 
 from __future__ import annotations
 import argparse
@@ -21,7 +54,7 @@ T_INIT, C_INIT = 28.0, 2.55 #初始温度与含水率
 T_CONST, C_CONST = 50.0, 0.05 #恒温干燥
 T_PREHEAT_END = 14400.0 #附件 1 时间上限 s
 C_DRY = 0.15 #烘干判据
-N_FINE = 100 #默认网格单元数
+N_FINE = 200 #默认网格单元数。论文结果就是 200 跑的；换成 100 烘干时间会差 0.16%（219340 vs 219685 s）
 
 #物性关系
 def props_p23(conc, temp):
@@ -102,21 +135,19 @@ def _assemble(lam, face, adv, value, alpha_const, far_value, n):
     统一记成:lower[i]·u_{i-1} + diag[i]·u_i + upper[i]·u_{i+1} = rhs[i]。
     """
 
-    """参数:
-    lam : (n+1,)         时间导数项系数(含控制体权重、物性、R²)
-    face : (n,)          界面扩散系数（含 dt、D 或 k、ξ_face、1/h)
-    adv : (n+1,)         对流项系数（贴体坐标下 ∝ R·Ṙ·ξ;不收缩时全为 0)
-    value : (n+1,)       本时间步**开始时刻**的场（右端项只用它）
-    alpha_const : float  表面第三类边界的换热/传质系数（含 dt、R、h 或 hm)
-    far_value : float    远场值(T_inf 或 C_inf)
-    n : int              控制体个数
-    """
+    #参数:
+    #lam : (n+1,)         时间导数项系数(含控制体权重、物性、R²)
+    #face : (n,)          界面扩散系数（含 dt、D 或 k、ξ_face、1/h)
+    #adv : (n+1,)         对流项系数（贴体坐标下 ∝ R·Ṙ·ξ;不收缩时全为 0)
+    #value : (n+1,)       本时间步开始时刻的场（右端项只用它）
+    #alpha_const : float  表面第三类边界的换热/传质系数（含 dt、R、h 或 hm)
+    #far_value : float    远场值(T_inf 或 C_inf)
+    #n : int              控制体个数
 
-    """三段的组装依据
-    · 中心节点 i=0:控制体是[0, h/2],没有左侧界面(对称性已经体现在weight[0]=h²/8里），所以只有右界面的face[0]。
-    · 内部节点：左界面face[i-1]、右界面 face[i]，对流项用中心差分∫ξ∂ξudξ≈ξ_i(u_{i+1}-u_{i-1})/2,故 lower 里出现-adv、upper里+adv。
-    · 表面节点 i=n:β=face[n-1] 是内界面扩散，γ=adv[n] 是对流项在边界上的单侧(迎风)离散。因为收缩时 Ṙ<0、流动方向朝内,迎风离散取 u_{n-1}-u_n。
-    """
+    #三段的组装依据
+    #· 中心节点 i=0:控制体是[0, h/2],没有左侧界面(对称性已经体现在weight[0]=h²/8里），所以只有右界面的face[0]。
+    #· 内部节点：左界面face[i-1]、右界面 face[i]，对流项用中心差分∫ξ∂ξudξ≈ξ_i(u_{i+1}-u_{i-1})/2,故 lower 里出现-adv、upper里+adv。
+    #· 表面节点 i=n:β=face[n-1] 是内界面扩散，γ=adv[n] 是对流项在边界上的单侧(迎风)离散。因为收缩时 Ṙ<0、流动方向朝内,迎风离散取 u_{n-1}-u_n。
     lower = np.zeros(n + 1)
     diag = np.zeros(n + 1)
     upper = np.zeros(n + 1)
@@ -220,14 +251,13 @@ def solve(
     picard : int     Picard 最大迭代次数
     picard_tol : float  Picard 收敛判据（温度与水分的变化量）
     """
-    """返回字典
-    xi          贴体网格节点
-    times       实际推进到的时间序列（达标时会被截断）
-    temp/conc   两个场的完整时空解（贴体坐标）
-    radius      每个时刻的半径 R(t)
-    dry_time    中心含水率首次低于 0.15 的时刻 [s]，未达标为 None
-    dt, n       实际使用的步长与网格
-    """
+    #返回字典
+    #xi          贴体网格节点
+    #times       实际推进到的时间序列（达标时会被截断）
+    #temp/conc   两个场的完整时空解（贴体坐标）
+    #radius      每个时刻的半径 R(t)
+    #dry_time    中心含水率首次低于 0.15 的时刻 [s]，未达标为 None
+    #dt, n       实际使用的步长与网格
     props = PROPERTY_SETS[prop] #取物性函数
 
     #贴体网格

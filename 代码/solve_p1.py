@@ -1,3 +1,35 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""2026 高教社杯全国大学生数学建模竞赛 A 题 问题一求解.
+
+控制方程（圆柱坐标，一维径向轴对称）:
+    热量:  rho * cp * dT/dt = (1/r) * d/dr ( k * r * dT/dr )
+    水分:  dC/dt             = (1/r) * d/dr ( D(C) * r * dC/dr )
+
+定解条件:
+    T(r,0) = 28 C,  C(r,0) = 2.55 kg/kg
+    r = 0 :  dT/dr = 0,  dC/dr = 0                    (对称)
+    r = R :  -k dT/dr = h  * (T_s - T_inf(t))         (对流换热)
+             -D dC/dr = hm * (C_s - C_inf(t))         (对流传质)
+
+T_inf(t)、C_inf(t) 由附件 1 线性插值给出。物性取自附录 2，其中
+    D(C) = 7e-9 * exp(-0.89 / C)   [m^2/s]
+
+建模选择（详见 建模/问题一-物理模型与公式.md）:
+1. 传质边界采用干基密度口径，rho_d 两侧约去，故写 -D dC/dr = hm (C_s - C_inf)。
+2. 忽略汽化潜热。若计入，按同一密度口径会把表面压到湿球温度(34.7 C)以下，物理不可能。
+3. 水分方程取简单扩散形式，即 D 的经验公式视为相对总密度定义。
+
+数值方法:
+节点中心有限体积（离散格式守恒）+ 后向 Euler（无条件稳定），
+D(C) 的非线性用 Picard 迭代。默认细网格 N=400（h = 0.005 cm），
+题目要求的输出节点 0, 0.1, ..., 2.0 cm 恰为网格子集，无需插值。
+
+运行环境（系统 python3 缺 openpyxl，请用打包运行时）:
+    PY=/Users/sqz/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3
+    $PY 代码/solve_p1.py --save 输出/result1_data.npz
+"""
+
 from __future__ import annotations
 import argparse
 from pathlib import Path
@@ -236,7 +268,6 @@ def conservation_report(res):
     另报告物理水量 W = ∫ rho_d C dV = ∫ rho*C/(1+C) dV，用于说明
     简单模型与真实水分质量的差别（后者不守恒是密度口径近似的后果）。
     """
-    t = res["times"]
     area = 2.0 * np.pi * RADIUS * LENGTH
     q = res["c_volume"]
     removed = float(q[0] - q[-1])
