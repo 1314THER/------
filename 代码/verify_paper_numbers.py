@@ -585,6 +585,26 @@ def audit_criterion_section() -> None:
 
 
 # --------------------------------------------------------------------------
+def audit_p4_noshrink() -> None:
+    """问题四"固定半径"对照解的烘干时长（摘要、图 5 题注与附录 B 都引用它）。
+
+    数据来自 代码/prepare_figure_data.py 生成的 p4_noshrink.npz：
+    附录 4 物性、N=200、Δt=5 s、半径固定 2 cm。同时核对它与计入收缩的
+    问题四结果的比值。
+    """
+    p = OUT / "figdata" / "p4_noshrink.npz"
+    if not p.exists():
+        rec("问题四不收缩对照", "时长 / h", 129.79, float("nan"),
+            note="缺少 p4_noshrink.npz，先跑 prepare_figure_data.py")
+        return
+    d = np.load(p, allow_pickle=True)
+    h = float(d["dry_time"][0]) / 3600.0
+    rec("问题四不收缩对照", "时长 / h", 129.79, round(h, 2), tol=0.011)
+    d4 = np.load(OUT / "result4_data.npz", allow_pickle=True)
+    h4 = float(d4["dry_time"][0]) / 3600.0
+    rec("问题四不收缩对照", "相对计入收缩的倍数", 2.54, round(h / h4, 2), tol=0.006)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="论文数据审计")
     ap.add_argument("--heavy", action="store_true", help="追加需要重解的项")
@@ -599,6 +619,7 @@ def main() -> None:
     audit_drymass()
     audit_result_tables()
     audit_criterion_section()
+    audit_p4_noshrink()
 
     bad = [r for r in RECORDS if not r["一致"]]
     w = max(len(r["项目"]) for r in RECORDS)

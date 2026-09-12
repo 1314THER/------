@@ -1716,6 +1716,7 @@ def d25_dry_mass():
                     shell = (a + b * cs) / (1 + cs) * 2 * np.pi * \
                         (rr[-1] + Rk) / 2.0 * (Rk - rr[-1])
                     m[k] += shell
+        rel_raw = 100.0 * (m / m[0] - 1.0)   # 未平滑的端点值：论文表 9 就用它
         if "4" in tag:                       # 再做 2 h 滑动平均压掉残余抖动
             w = max(int(2 * 3600 / float(d["times"][1])), 1)
             kk = np.ones(w) / w
@@ -1729,7 +1730,8 @@ def d25_dry_mass():
         ax.set_xlabel("时间 / h")
         ax.set_ylabel("干物质质量相对初值的偏差 / %")
         ax.set_title(note, loc="left")
-        ax.text(0.03, 0.92, "末态 $%+.0f\\%%$" % rel[-1],
+        # 标注必须与论文表 9 的"结束时刻"一致，故取未平滑值，不能用滑动平均后的端点
+        ax.text(0.03, 0.92, "末态 $%+.0f\\%%$" % rel_raw[-1],
                 transform=ax.transAxes, fontsize=7.4, va="top",
                 color=C_MAIN if "23" in tag else C_TEAL)
     axes[0].text(0.5, 0.55, "题面给定的 $\\rho(C)$ 与\n固定半径假设的固有张力",

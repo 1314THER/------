@@ -95,8 +95,9 @@
 可信}。
 
 \textbf{数据层面}，附件 1 的残差为高频交替型抖动、无异常点，故不作平滑，
-并在线性插值、PCHIP 与三次样条中保留不产生过冲的分段线性插值；附件 2 的
-半径序列则用保单调三次 Hermite 插值，获得不过冲、$C^1$ 连续的收缩几何。
+并在线性插值、保单调三次 Hermite 插值（PCHIP）与三次样条中保留不产生
+过冲的分段线性插值；附件 2 的半径序列则用 PCHIP，获得不过冲、$C^1$ 连续
+的收缩几何。
 同时指出：仅凭空气侧激励无法反演换热系数 $h$ 与传质系数 $h_m$，故用灵敏度
 分析替代参数标定，并据测量噪声确定温度结果只有 3 位有效数字。尺度分析给出
 物理主线：$\alpha=1.689\times10^{-7}$\,m$^2$/s 是
@@ -132,7 +133,7 @@ $36.7863\,^\circ$C，中心含水率始终 $2.5500$\,kg/kg、表面降至 $1.510
 的下降，末段由扩散系数只有芯部 $1/256$ 的干壳控制；问题四采用实测收缩半径与
 贴体坐标 $\xi=r/R(t)$，因 $\xi$ 同时是材料坐标，骨架对流项与坐标变换项
 \textbf{精确抵消}，水分方程与问题二、三同口径，得
-\textbf{烘干时长 51.08\,h（2.128 天）}；同物性、同口径下固定半径需 $129.81$\,h，
+\textbf{烘干时长 51.08\,h（2.128 天）}；同物性、同口径下固定半径需 $129.79$\,h，
 即\textbf{忽略收缩会把烘干时长高估为 2.54 倍（154\%）}。
 
 全部结论经过网格、时间步、界面取法、水分口径、参数灵敏度与干物质守恒六类
@@ -167,7 +168,7 @@ $48.9\sim70.0$\,h）$>$ 水分方程口径（$+6.3\%/-15.6\%$）$>$ 界面取法
 
 \section{问题分析}
 
-四个问题本质是求解同一个物理过程的不同层面：
+四个问题本质是求解同一个物理过程的不同层面，逻辑关系见表 \ref{tab:overview}：
 
 \begin{table}[htbp]
   \centering
@@ -200,6 +201,9 @@ $\to$ 移动边界与变化的$\rho$（问题四）。四个问题具有一套�
     保证了结论之间的自洽与可比。
 
 \section{模型假设}
+
+全文假设分为介质与几何、物性与边界、闭合关系与数据处理三类，共
+(A1)--(A10) 条，逐条列于下；每条均注明依据或对应的检验小节。
 
 \begin{enumerate}
   \item[(A1)] \textbf{介质与局部热平衡}：药材视为均质、各向同性的含湿
@@ -237,6 +241,8 @@ $\to$ 移动边界与变化的$\rho$（问题四）。四个问题具有一套�
 \end{enumerate}
 
 \section{符号说明}
+
+下表汇总全文通用符号及其含义与单位，正文中不再重复说明。
 
 \begin{center}
 \begin{minipage}{\textwidth}
@@ -283,24 +289,6 @@ $\to$ 移动边界与变化的$\rho$（问题四）。四个问题具有一套�
 \textbf{无缺失、无负值，温度全局最低点即 $t=0$ 的 $28.0000\,^\circ$C}。
 因此附件 1 \emph{不需要}通常意义上的清洗。
 
-\begin{table}[htbp]
-  \centering
-  \caption{附件 1 实测序列的噪声诊断}
-  \label{tab:noise}
-  \small
-  \begin{tabular}{lccccc}
-    \toprule
-    量 & 趋势范围 & 残差标准差 & 最大残差 & 滞后 1 自相关 & 占全变幅 \\
-    \midrule
-    烘房温度 $T_\infty$ & $28.00\to50.00\,^\circ$C & $0.116\,^\circ$C
-      & $0.27\,^\circ$C & $-0.31$ & $0.52\%$ \\
-    水分浓度 $C_\infty$ & $0.0196\to0.0500$ & $1.1\times10^{-4}$
-      & $2.8\times10^{-4}$ & $-0.40$ & $0.38\%$ \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-
 \subsection{附件 1 的预处理：不作平滑、保留线性插值、不作差分}
 
 第一条结论是\textbf{不作平滑}。
@@ -310,28 +298,6 @@ Savitzky--Golay 的偏差与边界噪声不可消除的涨落同量级、物理�
 $0.055\,^\circ$C 明显超出该量级，恰印证上述判断。平滑既不改变结论、又要
 额外引入一个可调参数，故本文不作平滑。
 
-\begin{table}[htbp]
-  \centering
-  \caption{不同平滑方式对问题一结果的影响（相对原始线性插值；
-    偏差取全过程、全输出网格上的最大绝对偏差，末列为四舍五入到四位小数
-    后发生变化的格子占比）}
-  \label{tab:smooth}
-  \small
-  \begin{tabular}{lccc}
-    \toprule
-    处理方式 & 含水率偏差 & 温度偏差 & 四位小数变化 \\
-    \midrule
-    原始 60\,s 线性插值（本文采用） & --- & --- & --- \\
-    3 点滑动平均（180\,s） & $7.1\times10^{-6}$ & $0.022\,^\circ$C
-      & 温度 $97\%$，含水率 $0.3\%$ \\
-    5 点 Savitzky--Golay（300\,s） & $5.9\times10^{-6}$ & $0.014\,^\circ$C
-      & 温度 $87\%$ \\
-    15 点 Savitzky--Golay（900\,s） & $2.1\times10^{-5}$ & $0.055\,^\circ$C
-      & 温度 $97\%$ \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
 第二条结论是\textbf{保留 60\,s 分段线性插值}。各种插值都严格通过观测点，
 差别只在两点之间（表 \ref{tab:interp}），并且用现有数据无法判定哪种插值更准；而自然三次
 样条会把交替型噪声插出观测中并不存在的极值，产生 $0.080\,^\circ$C 的过冲，
@@ -339,25 +305,6 @@ $0.055\,^\circ$C 明显超出该量级，恰印证上述判断。平滑既不改
 四位小数的舍入阈值 $5\times10^{-5}$，会使\textbf{温度表中约 $87\%$ 的格子
 第 4 位小数随插值方式改变}，故必须锁定一种口径。本文锁定分段线性插值：
 无参数、无过冲、保单调，且对观测点不作改动。
-
-\begin{table}[htbp]
-  \centering
-  \caption{点间插值方式的影响（相对分段线性插值；边界偏差为插值序列
-    相对分段线性的最大偏离，过冲为插值曲线超出相邻样本区间的最大量）}
-  \label{tab:interp}
-  \small
-  \begin{tabular}{lcccc}
-    \toprule
-    插值方式 & 边界偏差 & 过冲 & 温度偏差 & 含水率偏差 \\
-    \midrule
-    分段线性（本文采用） & --- & 无 & --- & --- \\
-    PCHIP 保单调三次 & $0.049\,^\circ$C & 无
-      & $0.0040\,^\circ$C & $1.9\times10^{-6}$ \\
-    自然三次样条 & $0.097\,^\circ$C & \textbf{超调 $0.080\,^\circ$C}
-      & $0.0054\,^\circ$C & $2.9\times10^{-6}$ \\
-    \bottomrule
-  \end{tabular}
-\end{table}
 
 第三条结论是\textbf{不用差分估计变化率}。温度的相邻差分标准差为
 $0.245\,^\circ$C，除以 60\,s 得 $0.0041\,^\circ$C/s 的伪梯度，而问题一所在的
@@ -458,9 +405,10 @@ $\rho_d$ 视为常数，似乎会得到``斜率应等于截距''，进而怀疑�
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\textwidth]{figs/d32_energy.pdf}
-  \caption{附录 \ref{app:rho} 蒸发潜热否决的定量依据：按题给 $h_m$
-    估算的潜热需求远大于对流供热能力，比值全程大于 $1$，强行计入会把
-    表面温度压到湿球温度以下。}
+  \caption{蒸发潜热项的一致性检验：按题给 $h_m$ 估算的潜热需求远大于
+    对流供热能力，比值全程大于 $1$，强行计入会把表面温度压到湿球温度
+    以下，故题面参数体系对应忽略该项的简化（定量推导见附录
+    \ref{app:rho}）。}
   \label{fig:energy}
 \end{figure}
 
@@ -719,6 +667,9 @@ $0.0001\,^\circ$C，因为附件 1 中 $T_\infty(0)=28.000\,^\circ$C
 
 \subsubsection{机理讨论}
 
+两个场的完整图像见图 \ref{fig:p1-fields}（时空场）与图
+\ref{fig:p1-profiles}（若干时刻的径向剖面）。
+
 两个场的演化速率差异源于热扩散率与水分扩散系数相差 $34$ 倍。
 热量在 $1800$\,s 内的扩散长度已达半径的 $87\%$，而水分的扩散长度
 仅为半径的 $15\%$。因此``预热平衡''阶段的物理内容是\emph{药材整体趋于
@@ -739,7 +690,7 @@ $0.0001\,^\circ$C，因为附件 1 中 $T_\infty(0)=28.000\,^\circ$C
   \centering
   \includegraphics[width=\textwidth]{figs/d06_p1_profiles.pdf}
   \caption{问题一若干时刻的径向剖面族：(a) 温度剖面，$1800$\,s 时
-    径向温差 $3.24\,^\circ$C；(b) 水分浓度剖面，梯度集中在表面附近。}
+    径向温差 $3.21\,^\circ$C；(b) 水分浓度剖面，梯度集中在表面附近。}
   \label{fig:p1-profiles}
 \end{figure}
 
@@ -832,6 +783,8 @@ $T\,\partial_t(\rho c_p)$ 项，其量级与主项相当（见附录 \ref{app:rh
 本文不采用该口径。
 
 \subsubsection{定解条件}
+
+问题二的定解条件由初始条件与两端边界条件构成：
 
 \begin{equation}
   T(r,0)=28\,^\circ\mathrm{C},\qquad C(r,0)=2.55\ \mathrm{kg/kg},
@@ -950,6 +903,17 @@ $C_\infty(t)$ 同理，$t>14400$\,s 后取 $0.05$\,kg/kg。
   \end{tabular}
 \end{table}
 
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d11_p2_fields.pdf}
+  \caption{问题二的温度场 $T(r,t)$ 与水分浓度场 $C(r,t)$（$N=200$、
+    $\Delta t=5$\,s）。温度在 $1$\,h 内已接近均匀（$3$\,h 时径向温差
+    仅 $0.12\,^\circ$C），而水分浓度的高梯度区自表面向内推进：
+    $3$\,h 时表面已降到 $1.0082$\,kg/kg，中心仍有 $1.7663$\,kg/kg，
+    变化尚未波及 $r\lesssim1.0$\,cm 以内的芯部。}
+  \label{fig:p2-fields}
+\end{figure}
+
 由结果可见三点。
 
 第一，\textbf{升温呈“先慢后快”：前期略慢于问题一，随后迅速反超}。
@@ -971,7 +935,8 @@ $\rho c_p$ 显著下降（$C$ 由 $2.55$ 降到 $0.15$ 时由 $3.33\times10^6$
 第三，\textbf{水分脱除呈现出明显的"由表及里"次序}。$0.5$\,h 时中心基本未变
 （$2.5499$），表面已降到 $1.6491$；$1$\,h 时中心才开始下降（$2.5255$）。
 到 $3$\,h，表面降到 $1.0082$，而中心仍有 $1.7663$，径向梯度很大
-（剖面族见图 \ref{fig:p1-profiles}）。这说明过程始终由内部扩散控制。
+（温度与水分浓度的时空场见图 \ref{fig:p2-fields}）。这说明过程始终由
+内部扩散控制。
 
 \subsection{模型检验}
 \label{sec:p23-verify}
@@ -1210,7 +1175,8 @@ $0.1858$。表面含水率已接近空气平衡值（$0.05$ 附近），驱动�
 需要指出，判据由\textbf{中心}决定，而中心恰是最难干燥的位置。
 $57.42$\,h 时有 $C(0)=0.1500$、$C(0.5\,\mathrm{cm})=0.1477$、
 $C(2\,\mathrm{cm})=0.0527$，表面已干燥到接近平衡而中心刚刚达标，
-内外含水率相差近三倍，干燥全过程的曲线见图 \ref{fig:p3}。
+内外含水率相差近三倍，干燥全过程的曲线见图 \ref{fig:p3}，
+五个径向位置的历时曲线见图 \ref{fig:p3-family}。
 
 \begin{figure}[htbp]
   \centering
@@ -1447,12 +1413,14 @@ $467260$\,s $=5.41$ 天；计入收缩后为 $2.13$ 天，缩短为原来的 $39
     (a) 附件 2 的实测半径（$n=145$，间隔 1800\,s，实测点以散点示出）
     与保单调三次 Hermite 插值曲线；插值后 $\dot R\le0$ 恒成立、
     无过冲。(b) 中心水分浓度随时间的变化：含收缩时 51.08\,h 达标，
-    固定半径的对照工况需 129.81\,h，收缩使烘干时长缩短约 61\%。
+    固定半径的对照工况需 129.79\,h，收缩使烘干时长缩短约 61\%。
     两图均为确定性数值结果，不含统计误差。}
   \label{fig:p4}
 \end{figure}
 
 \subsection{模型检验}
+
+模型检验从退化一致性、单调性与守恒性三方面进行：
 
 \begin{enumerate}
   \item \textbf{退化检验}：令 $\dot R\equiv0$ 并把附录 4 物性替换为
@@ -1708,7 +1676,8 @@ $1.1\%$ 是“外推到绝干”与“实测已进入平台”的比较；若改
 
 \section{结果汇总与交付说明}
 
-四个结果文件均按附件 3 模板的格式保存，所有数值保留四位小数：
+四个结果文件均按附件 3 模板的格式保存，所有数值保留四位小数，其规模与
+内容见表 \ref{tab:files}：
 
 \begin{table}[htbp]
   \centering
@@ -1735,6 +1704,8 @@ $1.1\%$ 是“外推到绝干”与“实测已进入平台”的比较；若改
 
 \subsection{模型优点}
 
+本模型的优势集中在机理刻画、离散格式与可信度论证三方面：
+
 \begin{enumerate}
   \item 从控制方程出发刻画传热传质机理，而非经验拟合，
         参数全部来自题面，物理意义明确；
@@ -1758,6 +1729,8 @@ $1.1\%$ 是“外推到绝干”与“实测已进入平台”的比较；若改
 \end{enumerate}
 
 \subsection{模型缺点}
+
+仍需说明的局限主要来自降维与均匀化假设、以及题面数据之间的不自洽：
 
 \begin{enumerate}
   \item \textbf{一维径向假设}：忽略轴向输运的依据是长径比 6.25、两端面仅占
@@ -1902,7 +1875,7 @@ $e^{-0.45/C}e^{-3850/T}$ 的形式强非线性地进入方程，且干燥后期�
 
 题面给定的是长 $25$\,cm、半径 $2$\,cm 的三维圆柱体，问题一至问题四都把它
 简化为\textbf{一维径向}问题（假设 A2）。这里把该简化的误差拆成三层说明，
-推导细节见附录 \ref{app:radial}。
+推导细节见附录 \ref{app:radial}，各效应的量级汇总见表 \ref{tab:radial}。
 
 \textbf{（1）径向分布必须保留。}由附录 3 物性与附录 2 交换系数算得
 $Bi=hR/k=1.39$、$Bi_m=h_mR/D(C_0)=3.24$，两者都是 $O(1)$，
@@ -2092,7 +2065,7 @@ $h^2/8$、表面控制体的厚度只有 $h/2$，而干燥后期的水分剖面�
         $\rho D/(\rho+C\,\mathrm{d}\rho/\mathrm{d}C)$。
 \end{itemize}
 
-两种写法在问题一完全等价（那里 $\rho\equiv820$\,kg/m$^3$ 为常数），
+两种写法在问题一条件下等价（那里 $\rho\equiv820$\,kg/m$^3$ 为常数），
 差别只在问题二之后 $\rho$ 随 $C$ 变化时才显现；其物理含义与选取理由
 见第 \ref{sec:closure} 节与表 \ref{tab:clos}。
 
@@ -2370,7 +2343,7 @@ $-D\,\partial_rC=h_m(C_s-C_\infty)$ 两侧同为 m/s，说明 $h_m$ 是按
 \label{app:face}
 
 有限体积格式把方程写成逐个控制体的通量平衡，相邻节点之间的扩散通量
-必然写成
+都写成
 \begin{equation}
   J_{i+1/2}=(\rho D)_{i+1/2}\,\frac{C_{i+1}-C_i}{\Delta r},
   \label{eq:face-flux}
@@ -2551,7 +2524,7 @@ $\sqrt{\bar Dt}\approx1.3\sim2.4$\,cm，远小于半长 $L/2=12.5$\,cm，
       & $12.56$\,h（$22\%$）、$1/256$ & 后 $78\%$ 时长由干壳控制 \\
     均匀收缩（问题四） & 附件 2 外半径
       & $2.000\to1.198$\,cm，体积 $-64\%$
-       & 同口径下 $51.08$\,h 对 $129.81$\,h（固定半径） \\
+       & 同口径下 $51.08$\,h 对 $129.79$\,h（固定半径） \\
     非均匀径向收缩 & $\varepsilon_r=\beta\left[C_0-C(r,t)\right]$
       & 只有外半径，无法标定 & \textbf{未量化}（建议的改进方向） \\
     端面（轴向）输运 & 轴向项占 $\lambda^2$ 之比
@@ -2715,15 +2688,15 @@ PY = 打包运行时的 bin/python3\\[2pt]
 
 \subsection*{支撑材料文件列表}
 
-按竞赛规范，支撑材料为一个压缩包，其文件列表如下；其中与建模直接相关的
-求解、对照、灵敏度与校验程序全文列于本节之后。
+按竞赛规范，支撑材料为一个压缩包，其文件列表见表 \ref{tab:support-files}；
+其中与建模直接相关的求解、对照、灵敏度与校验程序全文列于本节之后。
 
 \begin{table}[htbp]
   \centering
   \caption{支撑材料文件列表}
   \label{tab:support-files}
   \small
-  \begin{tabular}{p{4.6cm}p{9.4cm}}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{6.6cm}>{\raggedright\arraybackslash}p{7.4cm}@{}}
     \toprule
     文件／目录 & 说明 \\
     \midrule
@@ -2787,8 +2760,8 @@ PY = 打包运行时的 bin/python3\\[2pt]
 
 \subsection*{完整程序清单（七）：批处理与结果生成}
 
-依次为 \texttt{run\_all.py}、\texttt{prepare\_outputs.py}、
-\texttt{paper\_tables.py}、\texttt{prepare\_figure\_data.py} 与
+依次为 \texttt{run\_all.py}、\texttt{prepare\_outputs.py}、\\
+\texttt{paper\_tables.py}、\texttt{prepare\_figure\_data.py} 与\\
 \texttt{verify\_paper\_numbers.py}。
 
 \lstinputlisting{../代码/run_all.py}
@@ -2822,6 +2795,69 @@ PY = 打包运行时的 bin/python3\\[2pt]
 与坐标变换项精确抵消，方程与问题二、三同形，只有度量因子 $R(t)^2$ 与
 表面边界条件中的 $R(t)$ 不同；$R(t)$ 及其解析导数由附件 2 的 PCHIP 插值
 给出，而非数值差分（理由见第 \ref{sec:preproc} 节）。
+
+\section{数据预处理的诊断表}
+
+正文第 \ref{sec:preproc} 节的三条结论所依据的诊断表集中列于此，正文只保留
+结论与量级判断。
+
+\begin{table}[htbp]
+  \centering
+  \caption{附件 1 实测序列的噪声诊断}
+  \label{tab:noise}
+  \small
+  \begin{tabular}{lccccc}
+    \toprule
+    量 & 趋势范围 & 残差标准差 & 最大残差 & 滞后 1 自相关 & 占全变幅 \\
+    \midrule
+    烘房温度 $T_\infty$ & $28.00\to50.00\,^\circ$C & $0.116\,^\circ$C
+      & $0.27\,^\circ$C & $-0.31$ & $0.52\%$ \\
+    水分浓度 $C_\infty$ & $0.0196\to0.0500$ & $1.1\times10^{-4}$
+      & $2.8\times10^{-4}$ & $-0.40$ & $0.38\%$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \caption{不同平滑方式对问题一结果的影响（相对原始线性插值；
+    偏差取全过程、全输出网格上的最大绝对偏差，末列为四舍五入到四位小数
+    后发生变化的格子占比）}
+  \label{tab:smooth}
+  \small
+  \begin{tabular}{lccc}
+    \toprule
+    处理方式 & 含水率偏差 & 温度偏差 & 四位小数变化 \\
+    \midrule
+    原始 60\,s 线性插值（本文采用） & --- & --- & --- \\
+    3 点滑动平均（180\,s） & $7.1\times10^{-6}$ & $0.022\,^\circ$C
+      & 温度 $97\%$，含水率 $0.3\%$ \\
+    5 点 Savitzky--Golay（300\,s） & $5.9\times10^{-6}$ & $0.014\,^\circ$C
+      & 温度 $87\%$ \\
+    15 点 Savitzky--Golay（900\,s） & $2.1\times10^{-5}$ & $0.055\,^\circ$C
+      & 温度 $97\%$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \caption{点间插值方式的影响（相对分段线性插值；边界偏差为插值序列
+    相对分段线性的最大偏离，过冲为插值曲线超出相邻样本区间的最大量）}
+  \label{tab:interp}
+  \small
+  \begin{tabular}{lcccc}
+    \toprule
+    插值方式 & 边界偏差 & 过冲 & 温度偏差 & 含水率偏差 \\
+    \midrule
+    分段线性（本文采用） & --- & 无 & --- & --- \\
+    PCHIP 保单调三次 & $0.049\,^\circ$C & 无
+      & $0.0040\,^\circ$C & $1.9\times10^{-6}$ \\
+    自然三次样条 & $0.097\,^\circ$C & \textbf{超调 $0.080\,^\circ$C}
+      & $0.0054\,^\circ$C & $2.9\times10^{-6}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \section{AI 使用声明}
 
