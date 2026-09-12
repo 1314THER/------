@@ -147,7 +147,7 @@ $>$ 端面效应（不超过 $1.1\%$）$>$ 时间步（$0.2\%$）$>$ 表面换�
 
 \section{问题提出}
 
-中药材烘干以热风烘干为主，分预热平衡与恒温干燥两个阶段；工艺参数选取
+中药材烘干以热风烘干为主\cite{ref-pan}，分预热平衡与恒温干燥两个阶段；工艺参数选取
 不当会造成效率低、能耗高、品质不稳等问题，而传统试验优化成本高、周期长，
 可以借助数理分析与数值仿真更快的获得干燥规律。
 
@@ -208,7 +208,7 @@ $\to$ 移动边界与变化的$\rho$（问题四）。四个问题具有一套�
         依据是长度半径比 $L/R=12.5$（长径比 $L/(2R)=6.25$）、
         两端面总面积仅占侧面积的 $R/L=8\%$
         （误差分析见第 \ref{sec:radial} 节）。
-  \item[(A3)] \textbf{热源与辐射}：只考虑对流换热与对流传质；
+  \item[(A3)] \textbf{热源与辐射}：只考虑对流换热与对流传质\cite{ref-wang}；
         烘房空气温度、湿度与流速在药材表面均匀分布，$h$ 与 $h_m$ 沿周向和轴向不变。
   \item[(A4)] \textbf{几何}：问题一至三取固定半径 $R=2$\,cm，问题四按附件 2 的实测
         $R(t)$ 收缩。误差分析见第
@@ -220,7 +220,7 @@ $\to$ 移动边界与变化的$\rho$（问题四）。四个问题具有一套�
         分析回答（第 \ref{sec:sensitivity} 节）。
   \item[(A7)] \textbf{汽化潜热}：忽略蒸发吸热对表面能量平衡的贡献。
         依据与能量收支核算见第 \ref{sec:closure} 节。
-  \item[(A8)] \textbf{水分输运}：问题一至三用 Fick 型扩散描述，
+  \item[(A8)] \textbf{水分输运}：问题一至三用 Fick 型扩散描述\cite{ref-crank}，
         表面为第三类边界条件 $-D\left.\partial_rC\right|_{r=R}
         =h_m(C_s-C_\infty)$，且干基密度在方程两侧约去（第
         \ref{sec:rho} 节）；问题四考虑收缩，几何改用贴体坐标下的动区域，
@@ -375,7 +375,7 @@ $+0.003\,^\circ$C/h，末 10 个采样点在 $49.76\sim50.23\,^\circ$C 之间围
 $R$，二是第 \ref{sec:p11-crosscheck} 节反演收缩速率、判断“收缩何时完成”
 所需的 $\dot R$。若直接对实测序列作差分，相邻差分的信噪比只有 $2:1$，
 噪声会被放大 $1/\Delta t$ 倍；若用分段线性插值，$R$ 的斜率在节点处跳变，
-会使进入扩散算子与边界条件的几何量出现阶梯。因此采用 Fritsch--Carlson
+会使进入扩散算子与边界条件的几何量出现阶梯。因此采用 Fritsch--Carlson\cite{ref-fc}
 构造的保单调三次 Hermite 插值（PCHIP），它既保证
 $C^1$ 连续，又保持数据单调、不产生过冲；数值检验表明插值后 $R(t)$ 单调递减、
 $\dot R\le0$ 恒成立（三次样条在该序列上会出现过冲，故不采用）。
@@ -446,7 +446,7 @@ $\rho_d$ 视为常数，似乎会得到``斜率应等于截距''，进而怀疑�
 \end{enumerate}
 
 蒸发潜热属于同一类口径问题：完整表面能量平衡应含 $-L_vj_w$ 项，但按题给
-传质系数计入后表面温度会被压到湿球温度以下、与物理不相容，故本文按假设 A7
+传质系数计入后表面温度会被压到湿球温度以下、与物理不相容\cite{ref-wang}，故本文按假设 A7
 忽略汽化潜热；能量收支核算见附录 \ref{app:rho}。
 
 \section{问题一：预热平衡阶段药材温度与水分浓度模型}
@@ -602,7 +602,7 @@ $1.855\times10^{-11}$\,m$^2$/s，跨越两个数量级。这使 \eqref{eq:p1-mas
 
 \subsubsection{空间离散}
 
-采用节点中心有限体积法以保证离散守恒。将 $[0,R]$ 均分为 $N$ 个控制体，
+采用节点中心有限体积法\cite{ref-tao,ref-patankar}以保证离散守恒。将 $[0,R]$ 均分为 $N$ 个控制体，
 节点 $r_i=ih_x$（$h_x=R/N$），内部界面位于 $r_{i\pm1/2}$。
 控制体权重满足 $\int f\,\mathrm{d}V=2\pi L\sum_i w_i f_i$，其中
 \begin{equation}
@@ -619,7 +619,7 @@ $1.855\times10^{-11}$\,m$^2$/s，跨越两个数量级。这使 \eqref{eq:p1-mas
 
 \subsubsection{时间离散与非线性处理}
 
-时间方向采用后向 Euler 格式。该格式无条件稳定，可避免 $D(C)$ 剧烈变化
+时间方向采用后向 Euler 格式\cite{ref-tao}。该格式无条件稳定，可避免 $D(C)$ 剧烈变化
 （$C$ 从 $2.55$ 降至 $0.15$ 时 $D$ 跨越两个数量级）导致的显式格式失稳。
 对每个时间步，将 $D(C)$ 的系数滞后处理，用 Picard 迭代求解：
 \begin{equation}
@@ -629,7 +629,7 @@ $1.855\times10^{-11}$\,m$^2$/s，跨越两个数量级。这使 \eqref{eq:p1-mas
   \label{eq:p1-picard}
 \end{equation}
 取 $\varepsilon=10^{-13}$，通常 $3\sim4$ 次迭代即收敛。每个迭代步化归为
-三对角线性方程组，用追赶法在 $O(N)$ 时间内求解。
+三对角线性方程组，用追赶法\cite{ref-patankar}在 $O(N)$ 时间内求解。
 
 由于热方程与水分方程解耦，二者可在同一时间步内独立推进，
 总计算量约为问题二的三分之一。
@@ -1297,7 +1297,7 @@ $1/R^2$ 与表面边界条件，且第 \ref{sec:p11-crosscheck} 节要用它的�
 $\dot R$ 反演收缩速率。若直接线性插值，$R$ 的斜率在节点处跳变，会让
 进入方程系数的几何量出现阶梯；若用差分估计 $\dot R$，噪声会被放大
 $1/\Delta t$ 倍。因此本文采用\textbf{单调三次 Hermite 插值
-（PCHIP，Fritsch--Carlson 构造）}，它既保证 $C^1$ 连续，又保持数据的
+（PCHIP，Fritsch--Carlson 构造）}\cite{ref-fc}，它既保证 $C^1$ 连续，又保持数据的
 单调性、不产生过冲。
 收缩终止的时刻由数据本身决定，无需外推。
 
@@ -2110,8 +2110,8 @@ $R(t)$，相当于把“外层先缩、芯部后缩”的径向分布取平均�
         比现在的点估计更符合工程决策的需要。
 
   \item \textbf{多孔介质两相模型与机器学习代理模型。}
-        更彻底的改进是把单一 Fick 扩散替换为 Luikov 或
-        Philip--De Vries 类\textbf{两相（液相＋气相）耦合模型}，
+        更彻底的改进是把单一 Fick 扩散替换为 Luikov\cite{ref-luikov} 或
+        Philip--De Vries\cite{ref-pdv} 类\textbf{两相（液相＋气相）耦合模型}，
         引入毛细压力本构与自由水／结合水的区分，可刻画结壳与
         内部水分重分布；代价是参数显著增多、标定难度上升。
         与之互补的是用本文求解器批量生成样本、训练
@@ -2137,6 +2137,40 @@ $R(t)$，相当于把“外层先缩、芯部后缩”的径向分布取平均�
 \end{enumerate}
 
 \newpage
+\begin{thebibliography}{99}
+
+  \bibitem{ref-wang}
+        王补宣. 工程传热传质学[M]. 北京: 科学出版社, 1998.
+
+  \bibitem{ref-pan}
+        潘永康, 王喜忠. 现代干燥技术[M]. 2 版. 北京: 化学工业出版社, 2007.
+
+  \bibitem{ref-tao}
+        陶文铨. 数值传热学[M]. 2 版. 西安: 西安交通大学出版社, 2001.
+
+  \bibitem{ref-patankar}
+        Patankar S V. Numerical Heat Transfer and Fluid Flow[M].
+        New York: Hemisphere Publishing, 1980.
+
+  \bibitem{ref-crank}
+        Crank J. The Mathematics of Diffusion[M]. 2nd ed.
+        Oxford: Clarendon Press, 1975.
+
+  \bibitem{ref-fc}
+        Fritsch F N, Carlson R E. Monotone piecewise cubic interpolation[J].
+        SIAM Journal on Numerical Analysis, 1980, 17(2): 238--246.
+
+  \bibitem{ref-luikov}
+        Luikov A V. Heat and Mass Transfer in Capillary-Porous Bodies[M].
+        Oxford: Pergamon Press, 1966.
+
+  \bibitem{ref-pdv}
+        Philip J R, de Vries D A. Moisture movement in porous materials
+        under temperature gradients[J]. Transactions, American Geophysical
+        Union, 1957, 38(2): 222--232.
+
+\end{thebibliography}
+
 \appendix
 \section{补充推导与中间结果}
 
