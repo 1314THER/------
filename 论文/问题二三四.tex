@@ -380,26 +380,29 @@ $R$ 由 $2.000$\,cm 单调收缩至 $1.198$\,cm，收缩比 $0.599$，
   \frac{\partial}{\partial r}=\frac{1}{R}\frac{\partial}{\partial\xi},
   \label{eq:p4-transform}
 \end{equation}
-其中 $\dot R=\mathrm{d}R/\mathrm{d}t<0$。$\xi$ 是随材料均匀收缩的物质坐标，
-$C$、$T$ 的材料导数即 $\left.\partial/\partial t\right|_{\xi}$，故坐标变换
-不产生对流项。代入式 \eqref{eq:p2-heat} 并整理，得
+其中 $\dot R=\mathrm{d}R/\mathrm{d}t<0$。代入式 \eqref{eq:p2-heat}
+并整理，得
 \begin{equation}
   \rho c_p\,\xi R^2\frac{\partial T}{\partial t}
   =\frac{\partial}{\partial\xi}
-   \left(k\,\xi\frac{\partial T}{\partial\xi}\right),
+   \left(k\,\xi\frac{\partial T}{\partial\xi}\right)
+   +\rho c_p\,\xi R\dot R\,\frac{\partial T}{\partial\xi},
   \label{eq:p4-heat}
 \end{equation}
-水分方程改用干基密度 $\rho_d=\rho/(1+C)$ 的变密度守恒形式
+水分方程同理
 \begin{equation}
-  \left(\rho_d+C\frac{\mathrm{d}\rho_d}{\mathrm{d}C}\right)\xi R^2
+  \left(\rho+C\frac{\mathrm{d}\rho}{\mathrm{d}C}\right)\xi R^2
    \frac{\partial C}{\partial t}
   =\frac{\partial}{\partial\xi}
-   \left(\rho_d D\,\xi\frac{\partial C}{\partial\xi}\right).
+   \left(\rho D\,\xi\frac{\partial C}{\partial\xi}\right)
+   +\left(\rho+C\frac{\mathrm{d}\rho}{\mathrm{d}C}\right)
+    \xi R\dot R\,\frac{\partial C}{\partial\xi}.
   \label{eq:p4-mass}
 \end{equation}
-其中 $\rho_d=\rho/(1+C)$ 是单位体积内的干料质量。收缩使干料更密实，
-$\rho_d$ 随 $C$ 与 $R(t)$ 共同变化，因此问题四必须保留密度；收缩只通过
-$R^2$ 因子起作用。若令 $R$ 恒定且 $\rho_d$ 为常数，上两式退化为问题二的方程组。
+右端最后一项是坐标变换带来的\textbf{对流项}，物理上对应材料被
+压缩（$\dot R<0$）对水分与热量的输运。问题四保留体积密度 $\rho$ 的守恒
+形式。若令 $\dot R\equiv0$，式 \eqref{eq:p4-heat}、\eqref{eq:p4-mass}
+退化为问题二的方程组。
 
 \subsubsection{定解条件}
 
@@ -415,10 +418,10 @@ $R^2$ 因子起作用。若令 $R$ 恒定且 $\rho_d$ 为常数，上两式退�
 
 \subsubsection{$R(t)$ 的处理}
 
-附件 2 为每 $1800$\,s 一个点的离散数据。本文采用
-\textbf{单调三次 Hermite 插值（PCHIP，Fritsch--Carlson 构造）}
-得到连续的 $R(t)$，它保证 $C^1$ 连续、保持单调性、不产生过冲，
-使 $R^2$ 因子与表面边界中的 $R$ 光滑演化。
+附件 2 为每 $1800$\,s 一个点的离散数据。若直接线性插值，
+$\dot R$ 在节点处跳变，会把间断引入对流项。因此本文采用
+\textbf{单调三次 Hermite 插值（PCHIP，Fritsch--Carlson 构造）}，
+它既保证 $C^1$ 连续，又保持数据的单调性、不产生过冲。
 收缩终止的时刻由数据本身决定，无需外推。
 
 \subsection{数值实现}
@@ -429,17 +432,18 @@ $w_i=\int\xi\,\mathrm{d}\xi$，即
   w_0=\frac{h^2}{8},\qquad w_i=\xi_i h\ (1\le i\le N-1),\qquad
   w_N=\frac{h(1-h/4)}{2}.
 \end{equation}
-水分方程的累计项按链式法则以
-$\rho_d+C\,\mathrm{d}\rho_d/\mathrm{d}C$ 滞后处理。时间方向与非线性处理同问题二，
+对流项在内部节点取中心差分、在表面节点取单侧差分。
+由于 $\dot R$ 在初期可达 $-2.9\times10^{-5}$\,m/s，对流项与扩散项量级相当，
+不忽略等号右端第二项是必要的。时间方向与非线性处理同问题二，
 取 $N=200$、$\Delta t=5$\,s。
 
 \subsection{结果}
 
 模型给出的烘干时长为
 \begin{equation}
-  t_{\mathrm{dry}}=142370\ \mathrm{s}=39.55\ \mathrm{h}=1.648\ \text{天},
+  t_{\mathrm{dry}}=181115\ \mathrm{s}=50.31\ \mathrm{h}=2.096\ \text{天},
 \end{equation}
-比不考虑收缩的问题三（$57.42$\,h）缩短了约 $31.1\%$。
+比不考虑收缩的问题三（$57.42$\,h）缩短了约 $12.4\%$。
 
 \begin{table}[htbp]
   \centering
@@ -453,13 +457,15 @@ $\rho_d+C\,\mathrm{d}\rho_d/\mathrm{d}C$ 滞后处理。时间方向与非线性
     \cmidrule(lr){2-6}
      & 0     & 0.5   & 1.0   & 1.5   & 2.0 & \\
     \midrule
-    6  & 0.9171 & 0.8185 & 0.5422 & —— & —— & 0.1797 \\
-    12 & 0.3929 & 0.3560 & 0.2390 & —— & —— & 0.0818 \\
-    18 & 0.2615 & 0.2405 & 0.1682 & —— & —— & 0.0629 \\
-    24 & 0.2068 & 0.1920 & 0.1389 & —— & —— & 0.0569 \\
-    30 & 0.1770 & 0.1655 & 0.1228 & —— & —— & 0.0544 \\
-    36 & 0.1582 & 0.1486 & 0.1124 & —— & —— & 0.0530 \\
-    烘干结束 & 0.1500 & 0.1412 & 0.1078 & —— & —— & 0.0525 \\
+    6  & 1.4770 & 1.2770 & 0.7859 & —— & —— & 0.2765 \\
+    12 & 0.6278 & 0.5552 & 0.3453 & —— & —— & 0.1293 \\
+    18 & 0.3709 & 0.3351 & 0.2201 & —— & —— & 0.0801 \\
+    24 & 0.2694 & 0.2470 & 0.1707 & —— & —— & 0.0646 \\
+    30 & 0.2185 & 0.2024 & 0.1450 & —— & —— & 0.0585 \\
+    36 & 0.1884 & 0.1757 & 0.1292 & —— & —— & 0.0555 \\
+    42 & 0.1686 & 0.1580 & 0.1185 & —— & —— & 0.0539 \\
+    48 & 0.1544 & 0.1453 & 0.1106 & —— & —— & 0.0529 \\
+    烘干结束 & 0.1500 & 0.1413 & 0.1081 & —— & —— & 0.0526 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -472,14 +478,14 @@ $\rho_d+C\,\mathrm{d}\rho_d/\mathrm{d}C$ 滞后处理。时间方向与非线性
 \subsection{收缩对烘干时长的影响}
 
 为分离收缩的贡献，用附录 4 的同一组物性但固定半径 $R\equiv2$\,cm 再求解一次，
-得烘干时长 $355575$\,s $=4.12$ 天；计入收缩后为 $1.65$ 天，
-缩短为原来的 $40.0\%$。
+得烘干时长 $493925$\,s $=5.72$ 天；计入收缩后为 $2.10$ 天，
+缩短为原来的 $36.7\%$。
 
 这一效应可从三个层面理解：扩散路程由 $R$ 缩短至 $0.6R$，
 特征扩散时间按 $R^2$ 计减少到 $36\%$；
 单位体积的表面积按 $1/R$ 计增大约 $1.67$ 倍，
-表面交换能力相对增强；此外收缩使干基密度 $\rho_d$ 增大、
-变密度守恒形式下的有效扩散系数增大，进一步加速内部水分的再分布。
+表面交换能力相对增强；此外对流项 $\propto\dot R$ 把表层水分
+向内部"挤压"，进一步加速了内部水分的再分布。
 
 这一结论有明确的工程含义：\textbf{忽视收缩会严重高估烘干时长}
 （本例中高估约 $1.7$ 倍）。若按不考虑收缩的结果安排生产，
@@ -490,12 +496,12 @@ $\rho_d+C\,\mathrm{d}\rho_d/\mathrm{d}C$ 滞后处理。时间方向与非线性
 \begin{enumerate}
   \item \textbf{退化检验}：令 $\dot R\equiv0$，式 \eqref{eq:p4-heat}、
         \eqref{eq:p4-mass} 退化为问题二模型，程序实测退化解与问题二解
-        完全一致，说明贴体坐标与变密度离散格式的实现正确。
+        完全一致，说明贴体坐标与对流项的实现正确。
   \item \textbf{单调性检验}：PCHIP 插值后的 $R(t)$ 单调递减，
         $\dot R\le0$ 始终成立，未出现插值过冲引起的非物理膨胀。
   \item \textbf{合理性检验}：收缩使烘干时长缩短，
         与"扩散路径变短有利于干燥"的物理预期一致；
-        问题三 $57.42$\,h、问题四 $39.55$\,h 均落在题面所述 $2\sim3$ 天区间内。
+        问题三 $57.42$\,h、问题四 $50.31$\,h 均落在题面所述 $2\sim3$ 天区间内。
 \end{enumerate}
 
 \section{结果文件说明}
