@@ -2728,9 +2728,11 @@ seaborn），不需要 Node 或其它外部运行时。
     \toprule
     文件／目录 & 说明 \\
     \midrule
-    \texttt{README.md}、\texttt{setup.sh}、\texttt{reproduce.sh}、
-    \texttt{requirements*.txt}
-      & 复现说明、一键建环境与一键复现脚本、依赖清单 \\
+    \texttt{README.md}、\texttt{交付说明.md}、\texttt{setup.sh}、
+    \texttt{reproduce.sh}、\texttt{打包支撑材料.sh}、\texttt{requirements*.txt}
+      & 复现说明与提交清单、一键建环境／一键复现／一键打包脚本、依赖清单 \\
+    \texttt{论文/}（\texttt{论文全文.tex} 与 \texttt{figs/}）
+      & 论文源文件与正文插图源文件（提交用的 PDF 单独提交，不打进支撑材料） \\
     \texttt{A题-药材的烘干问题.md/.pdf}、\texttt{附件/}、\texttt{模板/}
       & 题面全文与原始 PDF、附件 1/2、附件 3 的 \texttt{result*.xlsx} 模板 \\
     \texttt{代码/solve\_p1.py} & 问题一求解器（常数物性、热质解耦） \\
@@ -2805,7 +2807,11 @@ seaborn），不需要 Node 或其它外部运行时。
 \texttt{verify\_paper\_numbers.py}。（插图脚本 \texttt{make\_figures.py}
 约 2200 行，以及写出四个结果表的 \texttt{xlsx\_style.py}、
 \texttt{build\_result1.py}、\texttt{build\_results234.py} 与流式写入的
-\texttt{build\_result2\_xlsx.py}，全文均随支撑材料提供，此处不再重复。）
+\texttt{build\_result2\_xlsx.py}，全文均随支撑材料提供，此处不再重复。
+各程序的分层地图与逐文件职责见支撑材料中的 \texttt{代码/代码结构.md}，
+求解器的逐段讲解见 \texttt{代码/代码导读.md}；环境自检
+\texttt{check\_env.py}、生成提交版 PDF 的 \texttt{make\_delivery\_pdf.py}
+与插图样式／出图自检模块 \texttt{figlib/} 亦一并提供。）
 
 \lstinputlisting{../代码/run_all.py}
 
