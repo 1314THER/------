@@ -614,8 +614,8 @@ def s07_roadmap():
          "中心处达标即全局达标\n网格 / 时间步 / 口径\n三因素对照",
          "表 5\nresult3.xlsx\n$t_{dry}=57.42$ h"),
         ("问题四\n尺寸变化\n含收缩", "#F7F0F8",
-         "附件 2 实测 $R(t)$\n贴体坐标＋对流项\nPCHIP 保单调插值",
-         "表 6\nresult4.xlsx\n$t_{dry}=50.31$ h"),
+         "附件 2 实测 $R(t)$\n贴体材料坐标\nPCHIP 保单调插值",
+         "表 6\nresult4.xlsx\n$t_{dry}=51.08$ h"),
     ]
     x0, wt, gap = 0.015, 0.225, 0.028
     for i, (title, fc, method, res) in enumerate(stages):
@@ -1445,7 +1445,7 @@ def d19_p4_shrink():
     ax.set_ylabel("中心含水率 / (kg/kg)")
     ax.set_xlim(0, tn[-1])
     ax.legend(fontsize=6.8, loc="upper right")
-    ax.set_title("(b) 忽视收缩把烘干时长高估约 %.2f 倍" % (dryn / dry4),
+    ax.set_title("(b) 忽视收缩的时长为计入收缩的 %.2f 倍" % (dryn / dry4),
                  loc="left")
     return fig
 
@@ -1894,9 +1894,9 @@ def d29_geo_shrink():
     a, b = cc["a"], cc["b"]
     v = ((1 + c) / (a + b * c)) / ((1 + 2.55) / (a + b * 2.55))
     ax.plot(c, v, "-", color=C_MAIN, lw=1.6, label="体积比 $V/V_0$")
-    ax.plot(c, v ** (1 / 3), "--", color=C_ORANGE, lw=1.5,
+    ax.plot(c, v ** 0.5, "--", color=C_ORANGE, lw=1.5,
             label="线收缩比 $L/L_0$")
-    ax.plot(c, 2.0 * v ** (1 / 3), "-.", color=C_TEAL, lw=1.5,
+    ax.plot(c, 2.0 * v ** 0.5, "-.", color=C_TEAL, lw=1.5,
             label="半径 $R$ / cm")
     for lev in (2.0, 1.0, 0.5, 0.15):
         k = int(np.argmin(abs(c - lev)))
@@ -1904,7 +1904,7 @@ def d29_geo_shrink():
         ax.text(c[k] + 0.03, v[k] + 0.012, "%.3f" % v[k], fontsize=6.4,
                 color=C_INK)
     ax.axvline(2.0, color=C_BASE, lw=0.7, ls=":")
-    ax.annotate("预热段：$C\\geq2.0$\n线收缩 $<3\\%$",
+    ax.annotate("预热段：$C\\geq2.0$\n线收缩 $<5\\%$",
                 xy=(2.0, 1.94), xytext=(1.28, 1.46), fontsize=6.6,
                 color=C_BASE,
                 arrowprops=dict(arrowstyle="->", color=C_BASE, lw=0.7))
@@ -1913,29 +1913,45 @@ def d29_geo_shrink():
     ax.set_xlim(2.55, 0)
     ax.set_ylim(0.35, 2.05)
     ax.legend(fontsize=6.7, loc="lower left")
-    ax.set_title("(a) 由附录 3 经验式推算的收缩（各向同性）", loc="left")
+    ax.set_title("(a) 由附录 3 经验式推算的收缩（径向等长）", loc="left")
 
     ax = axes[1]
     style(ax)
-    cen = e["conc21"][:, 0]
     rad = e["radius"] * 100.0
+    # 体积加权平均含水率 \bar C(t) = ∫C·r dr / ∫r dr
+    # 与正文 §11.5 的口径一致（同一含水率下比较）；预先向量化，避免逐时刻循环。
+    r_grid = np.arange(21) * 0.1          # cm，与 result4 的报告网格一致
+    ok = e["valid21"].astype(bool)        # (nt, 21)
+    idx_last = ok.sum(axis=1) - 1         # 每行最后一个有效节点的下标
+    rows = np.arange(len(rad))
+    seg = 0.5 * (e["conc21"][:, 1:] * r_grid[1:]
+                 + e["conc21"][:, :-1] * r_grid[:-1]) * 0.1
+    seg = np.where(ok[:, 1:] & ok[:, :-1], seg, 0.0)
+    cum = np.cumsum(seg, axis=1)          # 前 j 段梯形积分之和
+    full = np.where(idx_last >= 1,
+                    cum[rows, np.maximum(idx_last - 1, 0)], 0.0)
+    r_last = r_grid[np.maximum(idx_last, 0)]
+    c_last = e["conc21"][rows, np.maximum(idx_last, 0)]
+    gap = np.maximum(rad - r_last, 0.0)   # 最后一个节点到表面的余段
+    tail = 0.5 * (e["conc_surf"] * rad + c_last * r_last) * gap
+    cbar = (full + tail) / (0.5 * rad ** 2)
     a4, b4 = R["cases"]["appendix4"]["a"], R["cases"]["appendix4"]["b"]
     cg = np.linspace(0.05, 2.55, 400)
     vg = ((1 + cg) / (a4 + b4 * cg)) / ((1 + 2.55) / (a4 + b4 * 2.55))
-    ax.plot(cen, rad, "-", color=C_MAIN, lw=1.6, label="附件 2 实测轨迹")
-    ax.plot(cg, 2.0 * vg ** (1 / 3), "--", color=C_ORANGE, lw=1.5,
+    ax.plot(cbar, rad, "-", color=C_MAIN, lw=1.6, label="附件 2 实测轨迹")
+    ax.plot(cg, 2.0 * vg ** 0.5, "--", color=C_ORANGE, lw=1.5,
             label="附录 4 经验式推算")
     ax.invert_xaxis()
-    ax.set_xlabel("中心含水率 $C(0,t)$ / (kg/kg)")
+    ax.set_xlabel("体积平均含水率 $\\bar C(t)$ / (kg/kg)")
     ax.set_ylabel("半径 / cm")
     ax.set_ylim(1.15, 2.05)
     ax.legend(fontsize=6.8, loc="upper right")
     ax.set_title("(b) 实测收缩 vs 经验式推算", loc="left")
     # 端点差异必须在**同一含水率**下比：用末态中心含水率代入经验式，而不是取 cg 的右端
-    c_end = cen[-1]
+    c_end = cbar[-1]
     v_end = ((1 + c_end) / (a4 + b4 * c_end)) / \
         ((1 + 2.55) / (a4 + b4 * 2.55))
-    r_th = 2.0 * v_end ** (1 / 3)
+    r_th = 2.0 * v_end ** 0.5
     dd = 100 * (rad[-1] - r_th) / r_th
     ax.plot([c_end], [r_th], "o", ms=4, color=C_ORANGE)
     ax.annotate("同含水率下\n经验式 $%.2f$ cm vs 实测 $%.2f$ cm\n（$%+.1f\\%%$）"

@@ -89,9 +89,9 @@ def audit_artifacts() -> None:
     t4 = float(d4["dry_time"][0])
     rec("结果", "问题三烘干时长 / s", 206700, round(t3), tol=1)
     rec("结果", "问题三烘干时长 / h", 57.42, round(t3 / 3600, 2), tol=0.01)
-    rec("结果", "问题四烘干时长 / s", 181115, round(t4), tol=1)
-    rec("结果", "问题四烘干时长 / h", 50.31, round(t4 / 3600, 2), tol=0.01)
-    rec("结果", "问题四相对问题三缩短 / %", 12.4,
+    rec("结果", "问题四烘干时长 / s", 183885, round(t4), tol=1)
+    rec("结果", "问题四烘干时长 / h", 51.08, round(t4 / 3600, 2), tol=0.01)
+    rec("结果", "问题四相对问题三缩短 / %", 11.0,
         round(100 * (t3 - t4) / t3, 1), tol=0.1)
 
     # 结果文件规格（表 tab:files）
@@ -100,8 +100,8 @@ def audit_artifacts() -> None:
     rec("结果文件", "result3 行数（不含表头）", 3445, x3[0], tol=0)
     rec("结果文件", "result3 末时刻 / s", 206700, x3[1], tol=1)
     # 表中"论文值"一律填正文实际写的数，便于直接暴露不一致
-    rec("结果文件", "result4 行数（不含表头）", 3018, x4[0], tol=0)
-    rec("结果文件", "result4 末时刻 / s", 181080, x4[1], tol=1)
+    rec("结果文件", "result4 行数（不含表头）", 3064, x4[0], tol=0)
+    rec("结果文件", "result4 末时刻 / s", 183840, x4[1], tol=1)
     rec("结果文件", "result2 行数（不含表头）", 206700, meta["n2"], tol=0)
 
     # 问题一口径：t=1800 s 中心与表面
@@ -135,6 +135,25 @@ def audit_artifacts() -> None:
                                          (60, 206580, 219540), (120, 206760, 219720)):
         rec("时间步对照", f"fick Δt={dt_s:g} / s", fick_paper, tab[("fick", 100, dt_s)], tol=1)
         rec("时间步对照", f"变密度 Δt={dt_s:g} / s", cons_paper, tab[("cons", 100, dt_s)], tol=1)
+
+    # 第三种口径：干基密度守恒（论文口径表第三行）。
+    # 这张表由 closure_rhod.py 生成；此前论文里的 51.39 h 没有实现可核验，
+    # 因此单独登记，避免再出现"文中有数、代码无源"。
+    clos3 = list(csv.DictReader((OUT / "问题三-三种口径对照.csv").open(encoding="utf-8")))
+    c3 = {(r["form"], int(r["N"])): (float(r["t_dry_s"]), float(r["t_dry_h"]),
+                                     float(r["relative_to_fick_pct"]))
+          for r in clos3}
+    for form, N, p_s, p_h, p_pct in (
+            ("fick", 100, 206365, 57.32, 0.00),
+            ("cons", 100, 219340, 60.93, +6.29),
+            ("rhod", 100, 174195, 48.39, -15.59),
+            ("fick", 200, 206700, 57.42, 0.00),
+            ("cons", 200, 219685, 61.02, +6.28),
+            ("rhod", 200, 174490, 48.47, -15.58)):
+        c3_s, c3_h, c3_pct = c3[(form, N)]
+        rec("三种口径", f"{form} N={N} / s", p_s, c3_s, tol=1)
+        rec("三种口径", f"{form} N={N} / h", p_h, c3_h, tol=0.006)
+        rec("三种口径", f"{form} N={N} 相对 %", p_pct, round(c3_pct, 2), tol=0.011)
 
     # 参数灵敏度
     sens = list(csv.DictReader((OUT / "figdata" / "sens.csv").open(encoding="utf-8")))
@@ -344,12 +363,22 @@ def audit_drymass() -> None:
     rho3 = lambda c: 650.0 + 128.0 * c
     rho4 = lambda c: 760.0 + 90.0 * c
 
-    def md(row, R_cm, rho, valid):
+    def md(row, R_cm, rho, valid, surf=None):
+        """2πL∫_0^R [ρ(C)/(1+C)] r dr，积分上限取当前半径 R(t)。
+
+        若最后一个网格节点未落在 R(t) 上（收缩时总是如此），把表面值接到
+        半径 R(t) 处再积分，避免把最外侧的干壳整段丢掉而高估质量亏损。
+        """
         idx = [k for k in range(21) if valid[k] and x_cm[k] <= R_cm + 1e-9]
         if len(idx) < 2:
             return float("nan")
-        f = rho(np.asarray(row)[idx]) / (1.0 + np.asarray(row)[idx])
-        return 2 * math.pi * np.trapezoid(f * x_cm[idx] * 1e-2, x_cm[idx] * 1e-2) * L_LEN
+        rr = x_cm[idx].astype(float)
+        rowv = np.asarray(row, float)[idx]
+        if surf is not None and R_cm > rr[-1] + 1e-9:
+            rr = np.r_[rr, R_cm]
+            rowv = np.r_[rowv, float(surf)]
+        f = rho(rowv) / (1.0 + rowv)
+        return 2 * math.pi * np.trapezoid(f * rr * 1e-2, rr * 1e-2) * L_LEN
 
     d23 = np.load(OUT / "result23_data.npz", allow_pickle=True)
     d4 = np.load(OUT / "result4_data.npz", allow_pickle=True)
@@ -363,10 +392,11 @@ def audit_drymass() -> None:
         rec("干物质守恒", f"问题三 {h} h / %", paper, round(val), tol=3)
 
     m4_0 = md(d4["conc21"][0], 2.0, rho4, ones)
-    for h, paper in ((12, -27.0), (30, -13.8), ("end", -10.9)):
+    for h, paper in ((12, -23.1), (30, -13.9), ("end", -10.9)):
         i = len(d4["conc21"]) - 1 if h == "end" else int(round(h * 3600 / dt4))
         R_cm = float(d4["radius"][i]) * 100.0
-        val = 100 * (md(d4["conc21"][i], R_cm, rho4, d4["valid21"][i]) - m4_0) / m4_0
+        val = 100 * (md(d4["conc21"][i], R_cm, rho4, d4["valid21"][i],
+                        surf=d4["conc_surf"][i]) - m4_0) / m4_0
         rec("干物质守恒", f"问题四 {h} h / %", paper, round(val, 1), tol=2.0)
 
 
@@ -480,9 +510,14 @@ def audit_result_tables() -> None:
     for rl, cells in rows:
         if "结束" in rl:
             rowvals = data[-1]
+            # result4.xlsx 的行落在 60 s 输出网格上（末行 183840 s），而正文的
+            # "烘干结束"取判据满足时刻 183885 s，两者相差不到一个步长，
+            # 因此末行允许 2e-4 的取整差。
+            tol_row = 2e-4
         else:
             t = int(float(rl)) * 3600
             rowvals = data[(t - 60) // 60]
+            tol_row = 5e-5
         for k, c in enumerate(cells):
             if k >= 5:                       # 第 6 列为药材表面
                 ref = rowvals[22]
@@ -490,7 +525,7 @@ def audit_result_tables() -> None:
                 ref = rowvals[2 + int(round(POS5[k] / 0.1)) - 1]
             got = "%.4f" % float(ref) if ref is not None else "——"
             rec("表6", f"t={rl} {'表面' if k >= 5 else 'r=%.1fcm' % POS5[k]}",
-                c, got, tol=5e-5)
+                c, got, tol=tol_row)
 
 
 # --------------------------------------------------------------------------

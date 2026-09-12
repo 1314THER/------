@@ -89,7 +89,7 @@ def _fv_weights(xi):
 
 
 def solve_with_radius(t_tab, R_tab, prop="p23", n=100, dt=5.0, tend=259200.0):
-    """把自定义的 R(t) 注入求解器（贴体坐标，含对流项）。"""
+    """把自定义的 R(t) 注入求解器（贴体材料坐标，无对流项）。"""
     old_t, old_v = base._RAD_T, base._RAD_V
     t_ext = np.r_[t_tab, tend]
     R_ext = np.r_[R_tab, R_tab[-1]]

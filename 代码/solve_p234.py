@@ -6,10 +6,21 @@
 所以温度和水分两个方程是解耦的，先后各推一步就行。问题二开始，附录3、4 给的
 rho、cp、k 全都随含水率变化，D 还随温度变化，两个方程真正耦合，只能来回迭代。
 
-   热量:  d(rho*cp*T)/dt = (1/r) * d/dr ( k * r * dT/dr )
-   水分(问题二/三，不收缩): dC/dt = (1/r) * d/dr ( D * r * dC/dr )
-   水分(问题四，收缩):       d(rho*C)/dt = (1/r) * d/dr ( rho * D * r * dC/dr )
-                           其中 rho = 760+90C 为附录 4 的体积密度。
+   热量:  rho*cp*dT/dt = (1/r) * d/dr ( k * r * dT/dr )   （体积热容口径）
+   水分:  dC/dt = (1/r) * d/dr ( D * r * dC/dr )          （经典 Fick，C 为干基含水率）
+
+  四个问题共用上面两式；问题四的差别只在几何：半径 R(t) 随时间收缩，计算域
+  随之缩小。把时间导数换到随材料运动的贴体坐标 xi = r/R(t) 上时有
+
+      d/dt|_r = d/dt|_xi - (xi*Rdot/R) * d/dxi
+
+  而对流项 u*d/dr（u = xi*Rdot 为骨架速度）恰好与坐标变换项抵消：
+
+      d/dt|_r + u*d/dr = d/dt|_xi
+
+  因此方程里**不出现**额外的"挤压"对流项，收缩只通过度量因子 1/R^2 与
+  表面边界条件中的 R 进入模型。这一点与问题二、三的经典 Fick 口径完全一致，
+  也避免了把体积密度 rho(C) 直接写进水分累积项（见论文 5.6 节）。
 
 定解条件跟问题一一样：
    T(r,0) = 28 C,  C(r,0) = 2.55 kg/kg
@@ -23,9 +34,8 @@ rho、cp、k 全都随含水率变化，D 还随温度变化，两个方程真�
 
 问题四还要处理收缩。半径 R(t) 用附件2 的数据，走 PCHIP 插值（不能用差分，实测
 相邻差分估出来的斜率信噪比只有 2:1，噪声会被放大）。为了不让网格跟着动，把计算
-放到贴体坐标 xi = r/R(t) 上做，方程会多出一个对流项：
-
-   rho*cp*xi*R*Rdot*dT/dxi     （水分方程同理）
+放到贴体坐标 xi = r/R(t) 上做；如上面推导，方程形式不变，只有度量因子与表面
+边界条件带上 R。
 
 数值方法还是老一套：节点中心有限体积 + 后向 Euler + Picard 迭代，
 每步组装成三对角方程组，用追赶法解。
@@ -153,16 +163,15 @@ def thomas(lower, diag, upper, rhs):
     return x
 
 #组装三对角系统
-def _assemble(lam, face, adv, value, alpha_const, far_value, n):
-    #把一个"扩散 + 对流 + 第三类边界"的隐式方程组装成三对角系统。
-    """被组装的方程（逐节点）:lam_i·(u_i - value_i)（后向 Euler)+face_i 类项·(u_i - u_{i±1})(扩散项)+adv_i·(u_{i+1} - u_{i-1})（贴体坐标带来）+alpha·(u_N - far_value)(表面第三类边界)=0
+def _assemble(lam, face, value, alpha_const, far_value, n):
+    #把一个"扩散 + 第三类边界"的隐式方程组装成三对角系统。
+    """被组装的方程（逐节点）:lam_i·(u_i - value_i)（后向 Euler)+face_i 类项·(u_i - u_{i±1})(扩散项)+alpha·(u_N - far_value)(表面第三类边界)=0
     统一记成:lower[i]·u_{i-1} + diag[i]·u_i + upper[i]·u_{i+1} = rhs[i]。
     """
 
     #参数:
     #lam : (n+1,)         时间导数项系数(含控制体权重、物性、R²)
     #face : (n,)          界面扩散系数（含 dt、D 或 k、ξ_face、1/h)
-    #adv : (n+1,)         对流项系数（贴体坐标下 ∝ R·Ṙ·ξ;不收缩时全为 0)
     #value : (n+1,)       本时间步开始时刻的场（右端项只用它）
     #alpha_const : float  表面第三类边界的换热/传质系数（含 dt、R、h 或 hm)
     #far_value : float    远场值(T_inf 或 C_inf)
@@ -170,8 +179,9 @@ def _assemble(lam, face, adv, value, alpha_const, far_value, n):
 
     #三段的组装依据
     #· 中心节点 i=0:控制体是[0, h/2],没有左侧界面(对称性已经体现在weight[0]=h²/8里），所以只有右界面的face[0]。
-    #· 内部节点：左界面face[i-1]、右界面 face[i]，对流项用中心差分∫ξ∂ξudξ≈ξ_i(u_{i+1}-u_{i-1})/2,故 lower 里出现-adv、upper里+adv。
-    #· 表面节点 i=n:β=face[n-1] 是内界面扩散，γ=adv[n] 是对流项在边界上的单侧(迎风)离散。因为收缩时 Ṙ<0、流动方向朝内,迎风离散取 u_{n-1}-u_n。
+    #· 内部节点：左界面 face[i-1]、右界面 face[i]。
+    #· 表面节点 i=n:β=face[n-1] 是内界面扩散，alpha_const 是第三类边界项。
+    #  贴体坐标下对流项与坐标变换项精确抵消，因此不出现对流贡献。
     lower = np.zeros(n + 1)
     diag = np.zeros(n + 1)
     upper = np.zeros(n + 1)
@@ -184,16 +194,14 @@ def _assemble(lam, face, adv, value, alpha_const, far_value, n):
     for i in range(1, n):
         bm = face[i - 1]
         bp = face[i]
-        a = adv[i]
-        lower[i] = -bm - a
+        lower[i] = -bm
         diag[i] = lam[i] + bm + bp
-        upper[i] = -bp + a
+        upper[i] = -bp
         rhs[i] = lam[i] * value[i]
     #表面节点
     beta = face[n - 1]
-    gamma = adv[n]
-    lower[n] = -beta + gamma
-    diag[n] = lam[n] + alpha_const + beta - gamma
+    lower[n] = -beta
+    diag[n] = lam[n] + alpha_const + beta
     rhs[n] = lam[n] * value[n] + alpha_const * far_value
     return lower, diag, upper, rhs
 
@@ -316,7 +324,6 @@ def solve(
         t_now = step * dt
         t_inf, c_inf = air_conditions(t_now) 
         r_now = radius(t_now) if shrink else R0 #当前半径 R(t)
-        r_dot = radius.deriv(t_now) if shrink else 0.0 #当前收缩速率 Ṙ(t)
 
         #把时间步开始时的状态固定下来
         conc_old = conc.copy()
@@ -324,33 +331,26 @@ def solve(
 
         #Picard迭代
         for _ in range(picard):
-            rho, drho, cp, k_cond, diff = props(conc, temp)
+            rho, _, cp, k_cond, diff = props(conc, temp)
             rho_cp = rho * cp
             heat_face = _face_mean(k_cond, face_mean)
-            # 水分方程：问题二/三用经典 Fick（ρ 不出现）；
-            # 问题四保留体积密度 ρ 的守恒形式 ∂(ρC)/∂t=∇·(ρD∇C)。
-            if prop == "p4":
-                accum = rho + conc * drho          # d(ρC)/dC
-                mass_face = (0.5 * (rho[:-1] + rho[1:])) * _face_mean(diff, face_mean)
-            else:
-                mass_face = _face_mean(diff, face_mean)
-                accum = np.ones(n + 1)
-            lam = accum * weight * r_now**2
+            # 水分方程：四个问题统一用经典 Fick 口径（干基含水率，ρ 不进入）。
+            # 收缩只通过度量因子 R² 与边界条件中的 R 进入，见文件头推导。
+            mass_face = _face_mean(diff, face_mean)
+            lam = weight * r_now**2
             fc = dt * mass_face * xif / h
-            adv = dt * accum * r_now * r_dot * xi / 2.0
-            alpha = dt * accum[n] * r_now * H_MASS
+            alpha = dt * r_now * H_MASS
             lower, diag, upper, rhs = _assemble(
-                lam, fc, adv, conc_old, alpha, c_inf, n
+                lam, fc, conc_old, alpha, c_inf, n
             )
             conc_new = thomas(lower, diag, upper, rhs)
 
             #温度方程
             lam = rho_cp * weight * r_now**2
             fc = dt * heat_face * xif / h
-            adv = dt * rho_cp * r_now * r_dot * xi / 2.0
             alpha = dt * r_now * H_HEAT
             lower, diag, upper, rhs = _assemble(
-                lam, fc, adv, temp_old, alpha, t_inf, n
+                lam, fc, temp_old, alpha, t_inf, n
             )
             temp_new = thomas(lower, diag, upper, rhs)
 

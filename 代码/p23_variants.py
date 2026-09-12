@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """问题三：径向网格数 N、时间步长 Δt 与水分方程口径的对照求解器。
 
-用途：复现论文第 10、11 节的两张对照表（表 10 与表 11）。
+用途：复现论文第 10.1、10.2 节的两张对照表（表 14 与表 15）。
 
 与主求解器 solve_p234.py 的关系
 ------------------------------
@@ -27,7 +27,7 @@
 两式的差别只在水分方程内部，温度方程完全相同（都含 rho*cp），
 因此可以直接比较"烘干时长"这一单一输出。
 
-两者的物理差别与选取理由见论文 §5.9（口径的闭合）与 §8.6.5（口径敏感性）。
+两者的物理差别与选取理由见论文 §5.6（口径的闭合）与 §7.6.5（口径敏感性）。
 
 跑法
 ----
@@ -36,7 +36,7 @@
     # 单组求解：N=200、dt=5 s、本文口径
     $PY 代码/p23_variants.py --n 200 --dt 5 --form fick
 
-    # 复现论文表 10 与表 11（并行，约 5 分钟）
+    # 复现论文表 14 与表 15（并行，约 5 分钟）
     $PY 代码/p23_variants.py --table
 
     # 只跑一小部分用于自检
@@ -123,9 +123,8 @@ def solve_variant(form="fick", thermo="coupled", n=200, dt=5.0,
                 alpha = dt * accum[n] * radius * base.H_MASS
             lam = accum * weight * radius ** 2
             fc = dt * mass_face * xif / h
-            adv = np.zeros(n + 1)            # 问题三不收缩，无对流项
             lo, di, up, rhs = base._assemble(
-                lam, fc, adv, conc_old, alpha, c_inf, n
+                lam, fc, conc_old, alpha, c_inf, n
             )
             conc_new = base.thomas(lo, di, up, rhs)
 
@@ -137,7 +136,7 @@ def solve_variant(form="fick", thermo="coupled", n=200, dt=5.0,
                 fc_t = dt * heat_face * xif / h
                 alpha_t = dt * radius * base.H_HEAT
                 lo_t, di_t, up_t, rhs_t = base._assemble(
-                    lam_t, fc_t, adv, temp_old, alpha_t, t_inf, n
+                    lam_t, fc_t, temp_old, alpha_t, t_inf, n
                 )
                 temp_new = base.thomas(lo_t, di_t, up_t, rhs_t)
             else:
@@ -176,7 +175,7 @@ def _job(args):
 def build_tasks(n_list, dt_list, n_ref=100, dt_ref=5.0):
     """构造两张表所需的 (口径, N, Δt) 任务集合。
 
-    表 10 固定 Δt=dt_ref、让 N 变；表 11 固定 N=n_ref、让 Δt 变。
+    表 14 固定 Δt=dt_ref、让 N 变；表 15 固定 N=n_ref、让 Δt 变。
     两者的公共点 (n_ref, dt_ref) 只跑一次。
     """
     pairs = {(n, dt_ref) for n in n_list} | {(n_ref, dt) for dt in dt_list}
@@ -192,16 +191,16 @@ def run_table(n_list, dt_list, jobs, n_ref=100, dt_ref=5.0):
 
 
 def _fmt(rows, n_list, dt_list, n_ref=100, dt_ref=5.0):
-    """打印两张表：表 10（N 的影响）与表 11（Δt 的影响）。"""
+    """打印两张表：表 14（N 的影响）与表 15（Δt 的影响）。"""
     index = {(f, n, dt): v for f, n, dt, v, _ in rows}
     head = ("%5s %8s %10s %9s %12s %9s %9s %9s"
             % ("N", "dt/s", "本文/s", "本文/h", "变密度/s", "变密度/h",
                "差值/s", "相对"))
     lines = []
     for title, cases in (
-        ("表 10　径向网格数的影响（Δt=%g s）" % dt_ref,
+        ("表 14　径向网格数的影响（Δt=%g s）" % dt_ref,
          [(n, dt_ref) for n in n_list]),
-        ("表 11　时间步长的影响（N=%d）" % n_ref,
+        ("表 15　时间步长的影响（N=%d）" % n_ref,
          [(n_ref, dt) for dt in dt_list]),
     ):
         lines += ["", title, head]
