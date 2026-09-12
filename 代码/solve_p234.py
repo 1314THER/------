@@ -6,8 +6,10 @@
 所以温度和水分两个方程是解耦的，先后各推一步就行。问题二开始，附录3、4 给的
 rho、cp、k 全都随含水率变化，D 还随温度变化，两个方程真正耦合，只能来回迭代。
 
-   热量:  d(rho*cp*T)/dt = (1/r) * d/dr ( k * r * dT/dr )
-   水分:  dC/dt          = (1/r) * d/dr ( D * r * dC/dr )
+   热量:  rho*cp*dT/dt = (1/r) * d/dr ( k * r * dT/dr )
+   水分(问题二/三，不收缩): dC/dt = (1/r) * d/dr ( D * r * dC/dr )
+   水分(问题四，收缩):       d(rho_d*C)/dt = (1/r) * d/dr ( rho_d*D*r*dC/dr )
+                           其中 rho_d = rho/(1+C) 为干基体积密度。
 
 定解条件跟问题一一样：
    T(r,0) = 28 C,  C(r,0) = 2.55 kg/kg
@@ -21,9 +23,9 @@ rho、cp、k 全都随含水率变化，D 还随温度变化，两个方程真�
 
 问题四还要处理收缩。半径 R(t) 用附件2 的数据，走 PCHIP 插值（不能用差分，实测
 相邻差分估出来的斜率信噪比只有 2:1，噪声会被放大）。为了不让网格跟着动，把计算
-放到贴体坐标 xi = r/R(t) 上做，方程会多出一个对流项：
-
-   rho*cp*xi*R*Rdot*dT/dxi     （水分方程同理）
+放到贴体坐标 xi = r/R(t) 上做。xi 是随材料运动的坐标，C 与 T 都是材料量，
+材料导数即 ∂/∂t|_xi，因此**不引入对流项**；收缩只通过 R(t) 进入 1/R² 因子，
+并让问题四的水分方程改用干基密度 rho_d = rho/(1+C) 的变密度守恒形式。
 
 数值方法还是老一套：节点中心有限体积 + 后向 Euler + Picard 迭代，
 每步组装成三对角方程组，用追赶法解。
@@ -322,15 +324,32 @@ def solve(
 
         #Picard迭代
         for _ in range(picard):
-            rho, _, cp, k_cond, diff = props(conc, temp)
+            rho, drho, cp, k_cond, diff = props(conc, temp)
             rho_cp = rho * cp
-            mass_face = _face_mean(diff, face_mean)
             heat_face = _face_mean(k_cond, face_mean)
-            #水分方程（经典 Fick 口径：未知量 C 为干基含水率，ρ 不出现）
-            lam = weight * r_now**2
+            # 水分方程：问题二/三用经典 Fick；问题四用
+            # 变密度守恒形式，干基密度 rho_d = rho/(1+C) 参与累计项与通量。
+            if prop == "p4":
+                c_safe = np.maximum(conc, 1e-12)
+                denom = 1.0 + c_safe
+                rho_d = rho / denom
+                drho_d = (drho * denom - rho) / denom**2
+                accum = rho_d + c_safe * drho_d
+                rho_d_face = 0.5 * (rho_d[:-1] + rho_d[1:])
+                mass_face = rho_d_face * _face_mean(diff, face_mean)
+            else:
+                mass_face = _face_mean(diff, face_mean)
+                accum = np.ones(n + 1)
+            lam = accum * weight * r_now**2
             fc = dt * mass_face * xif / h
-            adv = dt * r_now * r_dot * xi / 2.0
-            alpha = dt * r_now * H_MASS
+            # 贴体坐标 ξ=r/R(t) 是随材料运动的坐标，干基含水率 C 与温度 T
+            # 都是材料量，材料导数即 ∂/∂t|_ξ，故无对流项（收缩只通过 R(t)
+            # 进入 R² 因子）。
+            adv = np.zeros(n + 1)
+            if prop == "p4":
+                alpha = dt * rho_d[n] * r_now * H_MASS
+            else:
+                alpha = dt * r_now * H_MASS
             lower, diag, upper, rhs = _assemble(
                 lam, fc, adv, conc_old, alpha, c_inf, n
             )
@@ -339,7 +358,7 @@ def solve(
             #温度方程
             lam = rho_cp * weight * r_now**2
             fc = dt * heat_face * xif / h
-            adv = dt * rho_cp * r_now * r_dot * xi / 2.0
+            adv = np.zeros(n + 1)
             alpha = dt * r_now * H_HEAT
             lower, diag, upper, rhs = _assemble(
                 lam, fc, adv, temp_old, alpha, t_inf, n

@@ -334,7 +334,8 @@ def fig_p4():
     ax.set_ylabel("中心水分浓度 / (kg/kg)")
     ax.set_xlim(0, dryn + 4)
     ax.legend(frameon=False, loc="upper right")
-    ax.set_title("(b) 中心含水率：收缩把烘干时长压缩约 63%", loc="left")
+    ax.set_title("(b) 中心含水率：收缩把烘干时长压缩约 %.0f%%"
+                 % (100 * (1 - dry / dryn)), loc="left")
     return fig, axes
 
 
