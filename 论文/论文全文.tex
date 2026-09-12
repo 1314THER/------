@@ -55,10 +55,13 @@
 }
 
 \geometry{left=2.2cm,right=2.2cm,top=2.6cm,bottom=2.4cm}
+% 页码：格式规范要求"页码位于页脚中部，用阿拉伯数字从 1 开始连续编号"，
+% 故不用带页眉的 headings 样式（页眉会把页码顶到右上角）。
+\pagestyle{plain}
 \captionsetup{font=small,labelsep=quad}
 \linespread{1.00}
 \allowdisplaybreaks
-\setlength{\emergencystretch}{1em}
+\setlength{\emergencystretch}{3em}
 
 % 浮动体：允许每页容纳更多表格/插图，并压缩它们与正文之间的空白，
 % 避免出现"两张表被顶到同一页、中间空出一大块"的版面。
@@ -1990,6 +1993,12 @@ $1.2\%$（见第 \ref{sec:p11-crosscheck} 节），但无法标定径向分布�
 
 模型向其他工况、几何与物料的推广路径见附录 \ref{app:promotion}。
 
+\section*{AI 使用声明}
+
+本参赛队在竞赛过程中使用了 AI 工具，主要用于语言润色、代码调试与论文排版；
+模型建立、公式推导、数值方案与全部结论均由参赛队独立完成并逐项复核，
+详细使用情况见支撑材料中的《AI 使用报告》。
+
 \newpage
 \begin{thebibliography}{99}
 
@@ -2668,23 +2677,42 @@ $b$ 由 $0$ 增到 $650$，$t_{\text{固定}}$ 只在 $57.30\sim57.43$\,h 之间
 
 \section{程序清单与复现说明}
 
-全部数值计算由 Python 3 完成，仅依赖 NumPy 与 openpyxl 两个库，
-不含任何黑箱求解器；四个问题的三对角方程组均由本文自行实现的追赶法求解。
+全部数值计算由 Python 3 完成，不含任何黑箱求解器：四个问题的三对角方程组
+均由本文自行实现的追赶法求解，结果表由 openpyxl 直接写出。除 NumPy 外，
+只用到写表格的 openpyxl 与画图的 matplotlib（样式库 \texttt{figlib/} 用到
+seaborn），不需要 Node 或其它外部运行时。
 
-复现方式（需使用打包的 Python 运行时）：
+复现方式（在支撑材料包根目录执行，\texttt{setup.sh} 会建好虚拟环境
+\texttt{.venv}）：
 
 \begin{quote}\small
 \ttfamily\raggedright
-PY = 打包运行时的 bin/python3\\[2pt]
-\$PY 代码/solve\_p1.py --save 输出/result1\_data.npz\\*
-\hspace*{1.6em}--tables 输出/问题一-表1表2.md\\[2pt]
-\$PY 代码/run\_all.py --n 200 --dt 5\\[2pt]
-\$PY 代码/prepare\_outputs.py\\[2pt]
-\$PY 代码/paper\_tables.py\\[2pt]
-\$PY 代码/p23\_variants.py --table
+\$ ./setup.sh \hfill \# 建 .venv，装 numpy/openpyxl/matplotlib/seaborn\\[2pt]
+\$ ./reproduce.sh \hfill \# 一键复现全部结果与插图\\[2pt]
+\$ ./reproduce.sh --fast \hfill \# 只复现四个 result 文件与正文表格
 \end{quote}
 
-其中最后一条负责复现第 \ref{sec:grid}、\ref{sec:timestep} 节的两张对照表。
+需要逐步执行时，等价的命令序列为（\texttt{PY=./.venv/bin/python}）：
+
+\begin{quote}\small
+\ttfamily\raggedright
+\$PY 代码/solve\_p1.py --save 输出/result1\_data.npz\\*
+\hspace*{1.6em}--tables 输出/问题一-表1表2.md\\[2pt]
+\$PY 代码/build\_result1.py\\[2pt]
+\$PY 代码/run\_all.py --n 200 --dt 5\\[2pt]
+\$PY 代码/prepare\_outputs.py\\[2pt]
+\$PY 代码/build\_results234.py\\[2pt]
+\$PY 代码/build\_result2\_xlsx.py\\[2pt]
+\$PY 代码/paper\_tables.py\\[2pt]
+\$PY 代码/p23\_variants.py --table --csv 输出/问题三-网格与口径对照.csv\\[2pt]
+\$PY 代码/prepare\_figure\_data.py\\[2pt]
+\$PY 代码/make\_figures.py
+\end{quote}
+
+其中 \texttt{p23\_variants.py} 一条负责复现第 \ref{sec:grid}、\ref{sec:timestep}
+节的两张对照表。插图与版面自检由 \texttt{prepare\_figure\_data.py} 和
+\texttt{make\_figures.py} 两条完成。其余各条生成四个
+\texttt{result}$\ast$.\texttt{xlsx} 与正文表格。
 
 \subsection*{支撑材料文件列表}
 
@@ -2700,25 +2728,37 @@ PY = 打包运行时的 bin/python3\\[2pt]
     \toprule
     文件／目录 & 说明 \\
     \midrule
+    \texttt{README.md}、\texttt{setup.sh}、\texttt{reproduce.sh}、
+    \texttt{requirements*.txt}
+      & 复现说明、一键建环境与一键复现脚本、依赖清单 \\
+    \texttt{A题-药材的烘干问题.md/.pdf}、\texttt{附件/}、\texttt{模板/}
+      & 题面全文与原始 PDF、附件 1/2、附件 3 的 \texttt{result*.xlsx} 模板 \\
     \texttt{代码/solve\_p1.py} & 问题一求解器（常数物性、热质解耦） \\
-    \texttt{代码/solve\_p234.py} & 问题二、三、四主求解器（变物性、动边界） \\
+    \texttt{代码/solve\_p234.py}
+      & 问题二、三、四主求解器（变物性、贴体坐标动边界） \\
     \texttt{代码/p23\_variants.py} & 网格／时间步／水分方程口径对照求解器 \\
     \texttt{代码/closure\_rhod.py} & 干基密度守恒口径的独立实现与交叉验证 \\
     \texttt{代码/sens.py} & 参数灵敏度分析 \\
     \texttt{代码/shrink\_criterion.py} & 收缩判据、阈值表与参数扫描 \\
     \texttt{代码/run\_all.py} & 主求解器批处理驱动 \\
-    \texttt{代码/prepare\_outputs.py} & 由数值解生成 \texttt{result*.xlsx} \\
+    \texttt{代码/prepare\_outputs.py}
+      & 由数值解生成 \texttt{result2--4.bin}（题面要求的时间间隔） \\
+    \texttt{代码/build\_result1.py}、\texttt{代码/build\_results234.py}、
+    \texttt{代码/build\_result2\_xlsx.py}、\texttt{代码/xlsx\_style.py}
+      & 用 openpyxl 写出 \texttt{result1--4.xlsx} 及其统一表头样式 \\
     \texttt{代码/paper\_tables.py} & 由数值解生成论文各表 \\
-    \texttt{代码/verify\_paper\_numbers.py} & 论文 347 项数字的自动核对 \\
+    \texttt{代码/verify\_paper\_numbers.py}、
+    \texttt{代码/export\_baseline\_tables.py}
+      & 论文 347 项数字的自动核对与基准值导出 \\
     \texttt{代码/prepare\_figure\_data.py}、\texttt{代码/make\_figures.py}
-      & 插图数据准备与绘制（含 \texttt{figlib/} 样式库） \\
-    \texttt{代码/build\_result1.mjs}、\texttt{build\_results234.mjs}
-      & 结果表的 JavaScript 生成脚本 \\
+      & 插图数据准备与绘制（含 \texttt{figlib/} 样式库与出图自检） \\
+    \texttt{代码/check\_env.py} & 解释器／依赖／中文字体自检 \\
     \texttt{输出/} & 全部数值结果、图像数据与审计文件
-      （\texttt{result1--4.xlsx}、\texttt{*.npz}、\texttt{figdata/} 等） \\
-    \texttt{建模/}、\texttt{思考-斜率截距与收缩/}
-      & 建模推导、收缩判据的独立复核脚本与报告 \\
-    \texttt{论文/figs/} & 正文与附录插图的 PDF/PNG 源文件 \\
+      （\texttt{result1--4.xlsx}、正文各表、对照 CSV、
+      \texttt{figdata/}、\texttt{figs/} 等） \\
+    \texttt{建模/}、\texttt{补充分析/斜率截距与收缩/}、\texttt{数据核对报告.md}、
+    \texttt{AI 使用报告.md}
+      & 建模推导、收缩判据的独立复核脚本与报告、数据核对结果、AI 使用报告 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -2762,7 +2802,10 @@ PY = 打包运行时的 bin/python3\\[2pt]
 
 依次为 \texttt{run\_all.py}、\texttt{prepare\_outputs.py}、\\
 \texttt{paper\_tables.py}、\texttt{prepare\_figure\_data.py} 与\\
-\texttt{verify\_paper\_numbers.py}。
+\texttt{verify\_paper\_numbers.py}。（插图脚本 \texttt{make\_figures.py}
+约 2200 行，以及写出四个结果表的 \texttt{xlsx\_style.py}、
+\texttt{build\_result1.py}、\texttt{build\_results234.py} 与流式写入的
+\texttt{build\_result2\_xlsx.py}，全文均随支撑材料提供，此处不再重复。）
 
 \lstinputlisting{../代码/run_all.py}
 
@@ -2858,11 +2901,5 @@ PY = 打包运行时的 bin/python3\\[2pt]
     \bottomrule
   \end{tabular}
 \end{table}
-
-\section{AI 使用声明}
-
-本参赛队在竞赛过程中使用了 AI 工具，主要用于语言润色、代码调试与论文排版，
-详细使用情况见支撑材料；模型建立、公式推导、数值方案与全部结论均由参赛队
-独立完成并逐项复核。
 
 \end{document}
