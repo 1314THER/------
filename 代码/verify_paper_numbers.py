@@ -494,6 +494,62 @@ def audit_result_tables() -> None:
 
 
 # --------------------------------------------------------------------------
+# 6. §11 判据与代价：正文数字 vs 收缩判据与代价.json
+# --------------------------------------------------------------------------
+def audit_criterion_section() -> None:
+    p = OUT / "收缩判据与代价.json"
+    if not p.exists():
+        return
+    c = json.loads(p.read_text(encoding="utf-8"))
+    g = c.get("几何对照")
+    if g:
+        rec("§11几何", "固定半径 / h", 57.32, round(g["fixed"] / 3600, 2), tol=0.01)
+        rec("§11几何", "ρ反演收缩 / h", 29.45, round(g["implied"] / 3600, 2), tol=0.01)
+        rec("§11几何", "实测收缩 / h", 23.85, round(g["measured"] / 3600, 2), tol=0.01)
+        rel = c["几何对照相对固定半径"]
+        rec("§11几何", "ρ反演相对固定 / %", -48.6, round(rel["implied"], 1), tol=0.1)
+        rec("§11几何", "实测相对固定 / %", -58.4, round(rel["measured"], 1), tol=0.1)
+    sw = c.get("b扫描")
+    if sw:
+        for b, lit_r, lit_f, lit_i, lit_d in (
+                (0, "0.000", "57.30", "21.27", 169),
+                (128, "0.197", "57.32", "29.45", 95),
+                (320, "0.492", "57.36", "40.59", 41),
+                (650, "1.000", "57.43", "57.43", 0)):
+            row = next(x for x in sw if abs(x["b"] - b) < 1e-6)
+            rec("§11扫描", f"b={b} r", lit_r, round(row["r"], 3), tol=1e-3)
+            rec("§11扫描", f"b={b} t_fixed / h", lit_f, round(row["t_fixed_h"], 2), tol=0.01)
+            rec("§11扫描", f"b={b} t_implied / h", lit_i, round(row["t_implied_h"], 2), tol=0.01)
+            rec("§11扫描", f"b={b} Δ / %", lit_d, round(row["delta_pct"]), tol=1)
+        tf = [x["t_fixed_h"] for x in sw]
+        rec("§11扫描", "固定几何全变程 / %", 0.24,
+            round(100 * (max(tf) / min(tf) - 1), 2), tol=0.02)
+    cr = c.get("判据", {})
+    if cr:
+        q = cr["全程 2.55→0.15"]
+        rec("§11判据", "全程 5% r*(径向)", 0.838, round(q["eps=5%"]["r*_radial"], 3), tol=1e-3)
+        rec("§11判据", "全程 5% r*(各向同性)", 0.765, round(q["eps=5%"]["r*_iso"], 3), tol=1e-3)
+        q2 = cr["问题二窗口 2.55→1.364"]
+        rec("§11判据", "问题二窗口 5% r*(径向)", 0.507,
+            round(q2["eps=5%"]["r*_radial"], 3), tol=1e-3)
+        q3 = cr["预热窗口 C 2.55→2.0"]
+        rec("§11判据", "预热 5% r*(径向)", 0.164,
+            round(q3["eps=5%"]["r*_radial"], 3), tol=1e-3)
+        rec("§11判据", "预热 3% r*(径向)", 0.351,
+            round(q3["eps=3%"]["r*_radial"], 3), tol=1e-3)
+    cs = c.get("临界含水率C*", {})
+    if cs:
+        rec("§11判据", "附录3 C*(5%,径向)", 1.953,
+            round(cs["附录3"]["eps=5%"]["radial"], 3), tol=1e-3)
+        rec("§11判据", "附录4 C*(5%,径向)", 2.062,
+            round(cs["附录4"]["eps=5%"]["radial"], 3), tol=1e-3)
+    be = c.get("收缩系数", {})
+    if be:
+        rec("§11判据", "beta(附录3)", 0.822, round(be["beta_附录3"], 3), tol=1e-3)
+        rec("§11判据", "beta(附录4)", 0.891, round(be["beta_附录4"], 3), tol=1e-3)
+
+
+# --------------------------------------------------------------------------
 def main() -> None:
     ap = argparse.ArgumentParser(description="论文数据审计")
     ap.add_argument("--heavy", action="store_true", help="追加需要重解的项")
@@ -507,6 +563,7 @@ def main() -> None:
     audit_p1_interp()
     audit_drymass()
     audit_result_tables()
+    audit_criterion_section()
 
     bad = [r for r in RECORDS if not r["一致"]]
     w = max(len(r["项目"]) for r in RECORDS)
