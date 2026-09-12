@@ -39,6 +39,11 @@ temp/
 输出/*.inspect.ndjson
 输出/*.bin
 
+# 插图的派生数据（可由 代码/prepare_figure_data.py 重新生成）
+# 注意：p4_noshrink.npz 单文件就有 135 MB，超过 GitHub 单文件 100 MB 的
+# 硬限制，一旦入库会让 push 被直接拒绝，因此整个目录不入库。
+输出/figdata/
+
 # 编辑器
 .vscode/
 .idea/

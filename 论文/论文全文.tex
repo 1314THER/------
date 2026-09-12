@@ -30,8 +30,15 @@
   numbers=left,
   numberstyle=\tiny\color{black!45},
   numbersep=8pt,
+  % 行号默认画在清单框左侧、伸进页边距里（实测越界约 0.6cm）。
+  % 下面两项让清单整体右移、同时把框向左扩到行号外侧，
+  % 使"框＋行号"的总宽度恰好等于正文宽度。
+  xleftmargin=2.4em,
+  framexleftmargin=2.4em,
+  xrightmargin=0em,
+  framexrightmargin=0em,
   frame=single,
-  framesep=4pt,
+  framesep=2pt,
   rulecolor=\color{black!35},
   breaklines=true,
   breakatwhitespace=false,
@@ -129,19 +136,36 @@ $0.002\sim0.027\,^\circ$C，小于噪声本身不可消除的 $0.02\,^\circ$C �
 因需要测点间连续的收缩速率，采用保单调三次 Hermite 插值。
 
 二是\textbf{严格区分了问题一中热质解耦与问题二中热质耦合的结构性差异}，
-并对题面未给出的闭合关系（传质边界条件的密度口径、汽化潜热）作了定量讨论，
-依据湿球温度下限判断出题面隐含忽略汽化潜热。
+并对题面未给出的闭合关系（传质边界条件的密度口径、汽化潜热）作了定量讨论：
+按 $L_v=2.26\times10^6$\,J/kg 试算，蒸发潜热需求比对流供热能力高三个数量级，
+若强行计入会把表面温度压到湿球温度 $34.7\,^\circ$C 以下，
+据此判断题面隐含忽略汽化潜热，并用能量收支图把该判断量化。
 
 三是\textbf{完成了参数灵敏度分析与基于实测数据的守恒性检验}。前者表明过程
 由内部水分扩散控制：$D$ 变化 $\pm20\%$ 使烘干时长在 $48.9\sim70.0$\,h 之间
-摆动，而表面换热系数 $h$ 的影响仅 $\pm0.05\%$、传质系数 $h_m$ 仅
+摆动，而表面换热系数 $h$ 的影响仅 $\pm0.03\%$、传质系数 $h_m$ 仅
 $\pm2\sim3\%$——即使附录给出的 $h$、$h_m$ 存在成倍误差，结论也基本不变；
-后者用附件 2 的实测半径检验干物质守恒，发现并如实报告了题面两组给定数据
-之间存在的不自洽（问题三 $+116\%$、问题四 $-26\%$）。
+后者用附件 2 的实测半径检验干物质守恒，量化并如实报告了题面两组给定数据
+之间的固有张力（问题三 $+116\%$、问题四 $-26\%$）。
 
 四是\textbf{全部结果通过了守恒性、网格与时间步收敛性、独立求解器交叉验证
 以及水分方程口径与界面系数取法的多方案对照}。四个问题算得的烘干时长均与题面给出的
 2--3 天量级自洽。
+
+五是\textbf{单独检验了物性关联式的自洽性并反演出收缩系数}。由干基含水率的
+定义可得恒等式 $\rho=\rho_d(1+C)$。题目给出的线性式斜率小于截距，
+看似与"$\rho_d$ 为常数"不相容，但"斜率应等于截距"这一判据隐含了
+"干燥过程体积严格不变"的强假设，而该假设在本题中并不成立。
+本文引入收缩系数反演得 $\beta\approx0.82\sim0.96$
+（端点反演 $0.823/0.891$、最小二乘 $0.916/0.962$，拟合最大相对偏差
+$6.2\%/4.8\%$），并验证三相体积分数在全程非负、$c_p$ 与 $k$ 在 $w\to1$
+处精确复现水的物性（$1450+2736=4186$\,J/(kg$\cdot$K)、
+$0.21+0.38=0.59$\,W/(m$\cdot$K)）。结论是题目条件\textbf{数学上自洽、
+物理上可容许}：斜率小于截距恰恰是体积收缩的定量标志，而若强行要求斜率等于
+截距，$C_0=2.55$ 处将得到 $2307.5$\,kg/m$^3$，超过任何可能的混合物密度。
+本文据此把"忽略收缩"这一假设量化到"预热段线收缩不足 $3\%$"，
+并指出经验式隐含的收缩与附件 2 实测收缩并不同源（同一含水率下半径相差
+约 $19.5\%$）。
 
 \vspace{1em}
 \noindent\textbf{关键词}：\ 热风干燥；耦合传热传质；圆柱坐标；有限体积法；
@@ -204,6 +228,18 @@ $\pm2\sim3\%$——即使附录给出的 $h$、$h_m$ 存在成倍误差，结论
 说明温度与水分的时间尺度不同，预热阶段以达热平衡为主；其三，
 两个 Biot 数均处于中值区间，说明不能作集总参数近似，
 必须给出沿半径的分布。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/s07_roadmap.pdf}
+  \caption{全文技术路线：\textbf{四问不是四个模型，而是同一个模型的四次升级}。
+    共同基础是圆柱坐标系下的一维径向耦合传热传质方程、节点中心有限体积、
+    后向 Euler 全隐式推进与追赶法求解；在此基础上依次引入
+    变物性（问题二）$\to$ 两阶段工况与干燥判据（问题三）
+    $\to$ 移动边界（问题四）。四个问题共用一套数值格式与同一份程序，
+    保证了结论之间的自洽与可比。}
+  \label{fig:roadmap}
+\end{figure}
 
 \section{模型假设}
 
@@ -303,13 +339,27 @@ $28.0000\,^\circ$C}，未出现低于初值的非物理值，水分浓度亦恒�
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{figs/fig1_air.pdf}
-  \caption{附件 1 实测序列与噪声诊断。(a)(b) 烘房温度与水分浓度的
-    60\,s 采样序列，样本量 $n=241$；(c) 温度相对高斯加权局部二次趋势
-    （窗口 15 点、无相位滞后）的残差，灰色带为 $\pm2\sigma$，
-    $\sigma=0.116\,^\circ$C。残差呈高频交替型（滞后 1 自相关 $-0.31$），
-    最大幅值仅为 $2.3\sigma$，无异常点。}
+  \includegraphics[width=\textwidth]{figs/d01_air_series.pdf}
+  \caption{附件 1 实测序列与噪声诊断（$n=241$，采样间隔 60\,s）。
+    (a)(b) 烘房温度与水分浓度的实测序列（实线）与高斯加权局部二次趋势
+    （虚线，窗口 15 点、无相位滞后）；(c)(d) 两条序列相对各自趋势的残差，
+    灰色带为 $\pm2\sigma$，温度残差 $\sigma=0.116\,^\circ$C、
+    水分浓度残差 $\sigma=1.1\times10^{-4}$\,kg/kg。
+    残差呈高频交替型（滞后 1 自相关为负），最大幅值仅约 $2.3\sigma$，
+    无异常点、无缺失。}
   \label{fig:air}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d02_air_diag.pdf}
+  \caption{附件 1 的数据质量诊断。(a) 温度–湿度相轨，颜色为时间，
+    两者高度同向（$r=0.983$），说明烘房升温与排湿是同一个工况推进过程；
+    (b) 两条序列标准化残差的分布与标准正态对照，均近似对称、无重尾；
+    (c) 残差自相关函数，滞后 1 阶为负且落在 95\% 白噪声带之外，
+    是\textbf{高频交替型}噪声（传感器噪声或控温往复调节）而非真实物理起伏的
+    直接证据——这正是下文"不对附件 1 作平滑"的主要依据之一。}
+  \label{fig:air-diag}
 \end{figure}
 
 \subsection{为什么不对附件 1 作平滑}
@@ -425,6 +475,32 @@ $\dot R$ 会把噪声放大 $1/\Delta t$ 倍；用分段线性插值则会使 $\
 不产生过冲。数值检验表明插值后 $R(t)$ 单调递减、$\dot R\le0$ 恒成立，
 未出现插值引起的非物理膨胀；三次样条在该序列上会出现过冲，故不采用。
 
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d03_radius.pdf}
+  \caption{附件 2 的半径序列与收缩特征（$n=145$，间隔 1800\,s）。
+    (a) 实测点与 PCHIP 保单调插值曲线，半径由 2.000\,cm 单调收缩至
+    1.198\,cm；(b) 由 PCHIP 解析导数给出的收缩速率 $\dot R(t)$，
+    峰值 $-0.22$\,cm/h 出现在 $t\approx4.3$\,h，说明收缩在干燥初期最剧烈；
+    (c) 收缩完成度：$50\%$ 的收缩在 $2.4$\,h 内完成、$99\%$ 在 $22.0$\,h
+    内完成，\textbf{收缩高度前置}。用差分而非解析导数会把噪声放大
+    $1/\Delta t$ 倍而看不出这一结构。}
+  \label{fig:radius}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d04_radius_vs_moisture.pdf}
+  \caption{半径与含水率的对应关系（数据取自问题四的解）。
+    (a) 以时间为颜色的半径–含水率相轨：轨迹在相平面上先快速左移
+    （半径迅速减小）、再长时间下移（含水率继续脱除）；
+    (b) 把两个量纲不同的量拆成上下两个共享时间轴的子图（不用双纵轴）：
+    收缩在 22\,h 内基本结束，而含水率的缓慢下降持续到 50\,h 之后，
+    \textbf{两者相差一个量级}。因此不能假定 $R$ 与 $C$ 同步，
+    本文直接采用实测 $R(t)$。}
+  \label{fig:radius-vs-c}
+\end{figure}
+
 \subsection{关于参数反演的说明：附件 1 不能用于反求 $h$ 与 $h_m$}
 \label{sec:identify}
 
@@ -462,7 +538,361 @@ $0.02\,^\circ$C。因此表 \ref{tab:p1-T}、表 \ref{tab:p2-T} 中温度值的
 相比之下，水分浓度场的四位小数对边界数据处理方式完全不敏感
 （表 \ref{tab:smooth}、\ref{tab:interp}），其末位是可靠的有效数字。
 
+\section{物性关联式的自洽性检验与收缩效应的定量反演}
+\label{sec:rho}
+
+题面附录给出的三个物性经验式（$\rho$、$c_p$、$k$）与水分扩散系数经验式
+$D(C,T)$ 是全部四个问题的数据基础。其中体积密度 $\rho$ 的线性式
+$\rho=a+bC$ 里有一个容易被误读的特征：\textbf{斜率远小于截距}
+（附录 3 为 $b=128$ 对 $a=650$，附录 4 为 $b=90$ 对 $a=760$，相差
+$4\sim8$ 倍）。一个自然的疑问是：由干基含水率的定义似乎应有
+$\rho=\rho_d(1+C)$，若 $\rho_d$ 为常数，则 $\rho$–$C$ 直线的斜率应当等于
+截距——那么题目给的这两式是否彼此不兼容？
+
+本节的任务是把这一疑问彻底讲清楚。结论是：\textbf{恒等式本身当然成立，
+但"斜率应等于截距"这一判据附加了一个未被言明的强假设}，而这个假设
+（干燥过程中物料体积严格不变）恰恰在本题中不成立。反过来，斜率小于截距
+正是物料存在体积收缩的定量标志。本节据此反演出收缩系数、检验了三相
+体积分数的物理可容许性，并给出 $\rho$ 在水分扩散方程中可以消去的条件——
+这既是后文"问题一至问题三忽略收缩"这一假设的定量依据，
+也是问题四必须引入动边界的原因。
+
+\subsection{恒等式与"斜率等于截距"的隐含假设}
+
+考察一块物料，记 $m_d$ 为干物质质量、$m_w$ 为水分质量、$V$ 为湿物料
+总体积，$\rho_w^0\approx10^3$\,kg/m$^3$ 为纯水真密度。干基含水率、
+体积密度、湿基含水率分别定义为
+\begin{equation}
+  C=\frac{m_w}{m_d},\qquad \rho=\frac{m_d+m_w}{V},\qquad
+  w=\frac{m_w}{m_d+m_w}=\frac{C}{1+C}.
+  \label{eq:rho-def}
+\end{equation}
+由此立即得到\textbf{恒等式}
+\begin{equation}
+  \rho=\frac{m_d(1+C)}{V}=\rho_d(1+C),\qquad
+  \rho_d\equiv\frac{m_d}{V}.
+  \label{eq:rho-identity}
+\end{equation}
+式 \eqref{eq:rho-identity} 是由定义直接得到的，对任何含水物料在任何时刻
+都成立，无需任何物理假设。关键在于 $\rho_d$ 的含义：它是以\textbf{湿物料
+当前总体积}为基准的\textbf{表观}干物质密度，而不是干物质自身的真密度
+$\rho_s$（植物干物质约 $1300\sim1600$\,kg/m$^3$）。二者相差一个固相
+体积分数：$\rho_d=\rho_s\varepsilon_s$，其中
+$\varepsilon_s=V_s/V$。只要 $V$ 随干燥过程变化，$\rho_d$ 就不是常数。
+
+把经验式 $\rho=a+bC$ 代入式 \eqref{eq:rho-identity} 得
+\begin{equation}
+  \rho_d(C)=\frac{a+bC}{1+C},\qquad
+  \frac{\mathrm{d}\rho_d}{\mathrm{d}C}=\frac{b-a}{(1+C)^2}.
+  \label{eq:rho-d-slope}
+\end{equation}
+于是
+\begin{equation}
+  b=a\iff \rho_d\equiv\text{const}\iff
+  \frac{m_d}{V}\ \text{在干燥全程不变}\iff V\ \text{不变（无收缩）}.
+  \label{eq:rho-criterion}
+\end{equation}
+可见"斜率等于截距"并不是定义的推论，而是"\textbf{干燥过程中物料体积
+严格不变}"这一物理假设的推论。实际物料失水后体积收缩，$C\downarrow$
+伴随 $V\downarrow$，于是 $\rho_d=m_d/V\uparrow$，即
+$\mathrm{d}\rho_d/\mathrm{d}C<0$，由式 \eqref{eq:rho-d-slope} 得 $b<a$。
+\textbf{因此题面给出的 $b<a$ 不是系数不统一，恰恰是体积收缩的必然标志}；
+反之，若题目给出 $b=a$，那才意味着强行假定了刚性不收缩物料，
+而 $b>a$ 则意味着物料吸水后体积反而缩小，那才是真正的物理矛盾。
+
+\subsection{收缩系数的定量反演}
+
+上一节只给出了符号判据。为了判断 $b$ 的具体数值是否落在物理可容许范围内，
+引入线性收缩模型：设每失去单位体积的水，物料总体积减少 $\beta$ 个单位体积，
+$\beta\in[0,1]$ 称为\textbf{收缩系数}（$\beta=0$ 为完全不收缩、孔隙全部由
+空气填充；$\beta=1$ 为理想收缩、体积减少量恰等于失水体积）。以 $1$\,kg
+干物质为基准，
+\begin{equation}
+  V(C)=V_0+\beta\frac{C}{\rho_w^0},\qquad V_0=V(0),
+  \label{eq:shrink-model}
+\end{equation}
+代入式 \eqref{eq:rho-identity} 得
+\begin{equation}
+  \rho(C)=\frac{1+C}{V(C)}=\frac{\rho_0(1+C)}{1+\beta\rho_0C/\rho_w^0},
+  \qquad \rho_0=\rho(0)=\frac{1}{V_0}.
+  \label{eq:shrink-rho}
+\end{equation}
+式 \eqref{eq:shrink-rho} 是 $C$ 的双曲函数而非线性函数。这本身就说明：
+\textbf{在有收缩的物料中，$\rho$ 与 $C$ 的严格关系不可能是线性的}，
+题面给出的线性式只能是在实验区间 $[0,C_0]$ 上的拟合式。
+
+令式 \eqref{eq:shrink-rho} 在 $C=C_0$ 处与线性式 $a+bC_0$ 相等，
+即可反演端点收缩系数
+\begin{equation}
+  \beta_{\text{端点}}=\frac{\rho_w^0}{C_0}
+  \left[\frac{1+C_0}{a+bC_0}-\frac{1}{a}\right].
+  \label{eq:beta-endpoint}
+\end{equation}
+在 $C\in[0,C_0]$ 上对式 \eqref{eq:shrink-rho} 与线性式做最小二乘拟合，
+则得 $\beta_{\mathrm{LSQ}}$ 及其残差。结果汇总于表 \ref{tab:beta}，
+拟合曲线见图 \ref{fig:rho-hyp}。
+
+\begin{table}[htbp]
+  \centering
+  \caption{收缩系数反演与物理可容许性检验
+    （$C_0=2.55$，$\rho_w^0=1000$\,kg/m$^3$，$\rho_s=1400$\,kg/m$^3$）}
+  \label{tab:beta}
+  \small
+  \begin{tabular}{lcc}
+    \toprule
+    项目 & 附录 3：$\rho=650+128C$ & 附录 4：$\rho=760+90C$ \\
+    \midrule
+    $\rho(0)$ / (kg/m$^3$)            & 650.0 & 760.0 \\
+    $\rho(C_0)$ / (kg/m$^3$)          & 976.4 & 989.5 \\
+    干燥全程体积比 $V(0)/V(C_0)$      & 0.423 & 0.367 \\
+    体积收缩率                        & $57.7\%$ & $63.3\%$ \\
+    $\beta_{\text{端点}}$（式 \eqref{eq:beta-endpoint}）
+      & 0.823 & 0.891 \\
+    $\beta_{\mathrm{LSQ}}$            & 0.916 & 0.962 \\
+    最小二乘 RMSE / (kg/m$^3$)        & 30.7 & 24.2 \\
+    最大相对偏差                      & $6.2\%$ & $4.8\%$ \\
+    $\beta\in[0,1]$ 对应的 $b$ 可容许区间 & $[85.6,\,650]$ & $[62.1,\,760]$ \\
+    题目给定 $b$（均落在区间内）      & $128$ & $90$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+两组经验式反演出的收缩系数均为 $\beta\approx0.82\sim0.96$，即失水体积的
+$80\%\sim96\%$ 转化为物料体积的减少，其余转化为孔隙。这对新鲜植物类物料
+是典型且完全合理的数值（文献中果蔬、中药材的 $\beta$ 普遍在 $0.7\sim1.0$）。
+同时 $b=128$ 与 $b=90$ 都稳稳落在 $\beta\in[0,1]$ 所对应的可容许区间内部。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d26_rho_hypothesis.pdf}
+  \caption{不同收缩假设下的 $\rho$–$C$ 关系。
+    实线为题目给定的经验式，其余三条为收缩模型式 \eqref{eq:shrink-rho}
+    在 $\beta=0$（无收缩）、$\beta=1$（理想收缩）与反演值
+    $\beta_{\mathrm{LSQ}}$ 下的曲线。水平点线为水的真密度
+    $1000$\,kg/m$^3$ 与干物质真密度 $1400$\,kg/m$^3$。
+    (a) 中的五角星标出"若强行要求斜率等于截距"时的后果：
+    在 $C_0=2.55$ 处将得到 $\rho=650\times3.55=2307.5$\,kg/m$^3$，
+    超过水与干物质真密度所能构成的\textbf{任何}混合物密度，
+    物理上不可能。真正不可能的恰恰是"斜率等于截距"这一要求本身，
+    而题目经验式与 $\beta\approx0.9$ 的收缩模型高度吻合。
+    本图为解析计算，不含数值误差。}
+  \label{fig:rho-hyp}
+\end{figure}
+
+\subsection{由经验式反算的表观干基密度}
+
+把经验式代回式 \eqref{eq:rho-d-slope}，可直接算出表观干基密度随含水率的
+变化（图 \ref{fig:rho-d}）：附录 3 对应 $\rho_d$ 由 $650$ 降到
+$275$\,kg/m$^3$，附录 4 由 $760$ 降到 $279$\,kg/m$^3$。
+也就是说，\textbf{干燥过程中单位干物质所占体积缩到了初始的约 $42\%$}，
+这正是体积收缩的直接体现，也说明 $\rho_d$ 绝不能被当作材料常数。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.62\textwidth]{figs/d27_rho_d.pdf}
+  \caption{由题目经验式反算的表观干物质密度
+    $\rho_d=\rho/(1+C)$。两条曲线都随含水率单调下降，
+    说明 $\rho_d$ 不是常数；灰色点线给出"若无收缩则 $\rho_d$ 应为常数"
+    的参照。}
+  \label{fig:rho-d}
+\end{figure}
+
+\subsection{三相体积分数的可容许性检验}
+
+更严格的可容许性判据是：水、固、气三相的体积分数处处非负。由
+\begin{equation}
+  \varepsilon_w=\frac{\rho\,w}{\rho_w^0},\qquad
+  \varepsilon_s=\frac{\rho\,(1-w)}{\rho_s},\qquad
+  \varepsilon_a=1-\varepsilon_w-\varepsilon_s\ge0
+  \label{eq:three-phase}
+\end{equation}
+取 $\rho_s=1400$\,kg/m$^3$ 计算结果如表 \ref{tab:phase} 与图
+\ref{fig:beta-check}(b)。
+
+\begin{table}[htbp]
+  \centering
+  \caption{三相体积分数检验（$\rho_s=1400$\,kg/m$^3$；
+    表中四种情形的三相体积分数均非负）}
+  \label{tab:phase}
+  \small
+  \begin{tabular}{llccc}
+    \toprule
+    经验式 & 状态 & $\varepsilon_w$ & $\varepsilon_s$ & 孔隙率 $\varepsilon_a$ \\
+    \midrule
+    附录 3 & $C=2.55$（初始湿态） & 0.701 & 0.196 & 0.102 \\
+    附录 3 & $C=0$（完全干燥）     & 0     & 0.464 & 0.536 \\
+    附录 4 & $C=2.55$              & 0.711 & 0.199 & 0.090 \\
+    附录 4 & $C=0$                 & 0     & 0.543 & 0.457 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+全区间内三相体积分数均非负，且湿态孔隙率约 $9\%\sim10\%$、干态孔隙率约
+$46\%\sim54\%$，与新鲜／干制植物材料的实测值量级一致。与表 \ref{tab:beta}
+一起，可以判定：\textbf{题目给出的两个密度经验式在数学上自洽、
+在物理上完全可容许}，它们只是实验区间上的拟合式，使用时不应外推。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d28_beta_check.pdf}
+  \caption{(a) 收缩系数的最小二乘反演：横轴为 $\beta$，纵轴为双曲式
+    \eqref{eq:shrink-rho} 对线性式的拟合 RMSE，圆点为最优值；
+    阴影带为文献中果蔬、中药材常见的 $\beta\in[0.7,1.0]$。
+    (b) 三相体积分数（水／固／气）在初始湿态与完全干燥态的分布，
+    四种情形下三相均非负（通过），孔隙率量级与植物材料相符。}
+  \label{fig:beta-check}
+\end{figure}
+
+\subsection{旁证：$c_p$ 与 $k$ 经验式的混合律结构}
+
+题目所给 $c_p$ 与 $k$ 均以 $C/(C+1)=w$（湿基含水率）为自变量。
+若这是质量加权混合律 $c_p=(1-w)c_{p,d}+wc_{p,w}$，则在 $w\to1$（纯水）处
+应外推得到水的物性。代入附录 3：
+\begin{equation}
+  c_p\big|_{w=1}=1450+2736=4186\ \mathrm{J/(kg\cdot K)},\qquad
+  k\big|_{w=1}=0.21+0.38=0.59\ \mathrm{W/(m\cdot K)}.
+  \label{eq:mixing-law}
+  \end{equation}
+这两个数值精确地就是水在常温下的比热容（$4182\sim4186$）与导热系数
+（$\approx0.60$）。附录 4 相应为 $4000$\,J/(kg$\cdot$K) 与
+$0.32$\,W/(m$\cdot$K)（$k$ 偏低，对应串联型而非并联型有效介质模型）。
+
+这一"巧合"有两重意义。其一，它\textbf{反向确证了 $C$ 确为干基含水率、
+$C/(C+1)$ 确为湿基含水率}——否则不可能在 $w=1$ 处如此精确地复现水的物性。
+其二，它说明题目的物性关联式是经过物理构造的：$c_p$ 与 $k$ 用质量分数
+混合律（与体积无关，故形式严格），$\rho$ 用实验线性拟合（与体积有关，
+故必须引入收缩，无法写成严格混合律）——三者处理方式的差异本身就是自洽的。
+
+\subsection{对水分扩散方程的影响：$\rho$ 何时可以消去}
+
+设 $\rho_d(\bm x,t)$ 为局部表观干物质密度，则单位体积的水分质量为
+$\rho_dC$。以固相骨架速度 $\bm u$（由收缩引起）为参考，水分守恒与
+干物质守恒分别为
+\begin{equation}
+  \frac{\partial(\rho_dC)}{\partial t}+\nabla\!\cdot\!(\rho_dC\bm u)
+  =\nabla\!\cdot\!(\rho_dD\nabla C),\qquad
+  \frac{\partial\rho_d}{\partial t}+\nabla\!\cdot\!(\rho_d\bm u)=0.
+  \label{eq:cons-pair}
+\end{equation}
+将第二式代入第一式化简，得随体形式
+\begin{equation}
+  \rho_d\left(\frac{\partial C}{\partial t}+\bm u\!\cdot\!\nabla C\right)
+  =\nabla\!\cdot\!(\rho_dD\nabla C).
+  \label{eq:cons-rho}
+\end{equation}
+由此可以明确 $\rho_d$ 的消去条件：
+
+\begin{enumerate}
+  \item \textbf{忽略收缩}时 $\bm u=\bm 0$ 且 $\rho_d$ 为时空常数，
+        可从式 \eqref{eq:cons-rho} 两端约去，在圆柱径向一维情形下化为
+        \begin{equation}
+          \frac{\partial C}{\partial t}
+          =\frac{1}{r}\frac{\partial}{\partial r}
+          \left(rD\frac{\partial C}{\partial r}\right).
+          \label{eq:rho-eliminated}
+        \end{equation}
+  \item \textbf{考虑收缩}时，只要换用以干物质质量为自变量的
+        Lagrange 坐标 $\xi$，$\rho_d$ 也会被吸收进度规中，
+        方程仍化为 $\partial C/\partial t=\partial_\xi(D_\xi\partial_\xi C)$，
+        其中 $D_\xi=\rho_d^2D$。这正是本文问题四所用贴体坐标变换的
+        一维对应形式。
+\end{enumerate}
+
+反过来，\textbf{不应把 $\rho=a+bC$ 直接代进扩散方程去"构造"一个含 $\rho$ 的
+形式}——那既无必要，也会因为把表观密度误当材料常数而引入错误。
+但在\textbf{能量方程}中 $\rho$ 应当照常使用：
+\begin{equation}
+  \rho(C)c_p(C)\frac{\partial T}{\partial t}
+  =\frac{1}{r}\frac{\partial}{\partial r}
+  \left(rk(C)\frac{\partial T}{\partial r}\right)-\rho_dh_{fg}
+  \frac{\partial C}{\partial t},
+  \label{eq:energy-rho}
+\end{equation}
+这里的 $\rho c_p$ 是体积热容，与收缩与否无关，$\rho=650+128C$ 直接代入即可。
+本文问题二、问题三采用的正是式 \eqref{eq:rho-eliminated} 的经典 Fick 口径
+（其敏感性见第 \ref{sec:closure} 节：把 $\rho$ 写回水分方程会使烘干时长
+系统性延长 $6.3\%$）。
+
+\subsection{一个应当诚实说明的张力：与附件 2 实测收缩的对照}
+
+需要指出，"采用式 \eqref{eq:rho-eliminated}（无收缩）"与"采用
+$\rho=a+bC$（隐含收缩）"之间存在一个明确的模型层面张力。
+由式 \eqref{eq:rho-identity} 结合经验式可直接算出单位干物质的体积
+$V(C)=(1+C)/(a+bC)$，据此推算的几何变化见表 \ref{tab:geo-shrink}。
+
+\begin{table}[htbp]
+  \centering
+  \caption{由附录 3 经验式推算的几何收缩（各向同性假设，初始半径 2\,cm）}
+  \label{tab:geo-shrink}
+  \small
+  \begin{tabular}{lcccc}
+    \toprule
+    终点含水率 $C$ & 2.00 & 1.00 & 0.50 & 0.15 \\
+    \midrule
+    体积比 $V/V_0$   & 0.911 & 0.707 & 0.578 & 0.473 \\
+    线收缩比 $L/L_0$ & 0.969 & 0.891 & 0.833 & 0.779 \\
+    半径 / cm        & 1.94  & 1.78  & 1.67  & 1.56 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+表 \ref{tab:geo-shrink} 给出两条重要信息。其一，
+\textbf{在预热平衡阶段与恒温干燥初期（$C$ 由 $2.55$ 降至约 $2.0$），
+线尺度只变化约 $3\%$}，
+忽略收缩造成的几何误差很小；其二，若模拟到深度干燥（$C\to0.15$），
+半径变化可达 $22\%$，此时忽略收缩的假设就必须显式声明或补做敏感性分析。
+图 \ref{fig:geo-shrink}(b) 进一步把"经验式推算的 $R(C)$"与
+"附件 2 实测的 $R$–$C$ 轨迹"画在同一坐标系中：
+\textbf{在同一末态含水率下，经验式给出 $1.49$\,cm，而附件 2 实测为
+$1.20$\,cm，两者相差约 $-19.5\%$，说明两条数据线并不同源}——
+经验式只是隐含了一个"平均"收缩效应，而附件 2 记录的是这支药材的真实
+收缩历程。这一差异与第 \ref{sec:drymass} 节由干物质守恒给出的检验结果
+相互印证，本文如实报告而不加掩盖。
+
+由此可见本文对"忽略收缩"这一假设的处理是分层的，而非一句空假设：
+\textbf{问题一至问题三}在题面给定的固定半径与附录物性体系下求解，
+忽略收缩引入的几何误差在预热阶段不超过 $3\%$，主要影响出现在
+深度干燥阶段，本文以口径敏感性（第 \ref{sec:grid}、
+\ref{sec:timestep} 节）与干物质守恒检验（第 \ref{sec:drymass} 节）
+两条独立途径量化了这一影响；\textbf{问题四}则直接采用附件 2 的实测
+$R(t)$ 并引入贴体坐标，把收缩效应完整纳入模型。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d29_geo_shrink.pdf}
+  \caption{(a) 由附录 3 经验式推算的几何收缩：体积比 $V/V_0$、
+    线收缩比 $L/L_0$ 与对应半径随终点含水率的变化，标注了正文四个
+    报数点的数值；$C\ge2.0$ 时线收缩不足 $3\%$。
+    (b) 附录 4 经验式推算的 $R(C)$ 与附件 2 实测 $R$–$C$ 轨迹的对照，
+    两者在同一末态含水率下相差约 $-19.5\%$。}
+  \label{fig:geo-shrink}
+\end{figure}
+
+\subsection{本节结论}
+
+\begin{enumerate}
+  \item \textbf{恒等式的推导正确}，但由它推出"斜率等于截距"需要额外假设
+        $\rho_d=\text{const}$，该假设等价于"干燥过程体积不变"，在本题中
+        不成立。\textbf{本文明确区分表观干物质密度 $\rho_d$ 与干物质真密度
+        $\rho_s$}，两者在符号表中分别列出。
+  \item \textbf{斜率小于截距是体积收缩的定量标志}。反演给出
+        $\beta\approx0.82\sim0.96$，三相体积分数检验全程通过，
+        $c_p$、$k$ 在 $w\to1$ 处精确复现水的物性。
+        因此题目条件\textbf{数学上自洽、物理上可容许}；两个密度经验式
+        是实验区间 $C\in[0,2.55]$ 上的拟合式，使用时不外推。
+  \item \textbf{水分方程中 $\rho$ 的消去是有条件的}：无收缩假设下可严格
+        约去，Lagrange／贴体坐标下会被吸收进度规；本文采用式
+        \eqref{eq:rho-eliminated} 的经典 Fick 口径，并在第
+        \ref{sec:closure} 节给出把 $\rho$ 写回方程的口径敏感性作为对照。
+        $\rho$ 在能量方程中照常使用。
+  \item \textbf{经验式隐含的收缩与附件 2 实测收缩并不同源}
+        ——在同一含水率下，附件 2 实测半径比经验式推算值小约
+        $19.5\%$。这是题面两组给定数据之间的固有张力，
+        本文以分层假设＋双重检验的方式如实处理。
+\end{enumerate}
+
 \section{预热平衡阶段药材温度与水分浓度模型}
+
 
 \subsection{问题分析}
 
@@ -479,7 +909,7 @@ $0.02\,^\circ$C。因此表 \ref{tab:p1-T}、表 \ref{tab:p2-T} 中温度值的
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{figs/fig0_geom.pdf}
+  \includegraphics[width=\textwidth]{figs/s01_geometry.pdf}
   \caption{圆柱形药材的几何、柱坐标与一维径向简化。
     (a) 几何与坐标架：药材长 $L=25$\,cm、半径 $R=2$\,cm，
     取柱坐标 $(r,z)$，$r$ 为到中心轴的距离、$z$ 为轴向；
@@ -491,6 +921,55 @@ $0.02\,^\circ$C。因此表 \ref{tab:p1-T}、表 \ref{tab:p2-T} 中温度值的
     表面 $r=R$ 为第三类边界；蓝色环状区域即后文有限体积离散所用的
     控制体 $2\pi r\,\mathrm{d}r\,\mathrm{d}z$。}
   \label{fig:geom}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/s02_physics.pdf}
+  \caption{预热平衡阶段的物理图像与两条传输通道。烘房空气状态
+    $T_\infty(t)$、$C_\infty(t)$ 是边界激励；药材内部温度由导热
+    $k\,\partial_rT$ 向内传递，水分由扩散 $D\,\partial_rC$ 向外迁移，
+    两者在表面通过第三类边界与空气交换。左侧给出内部方程与表面边界条件，
+    右上角点明本文的结构性结论：\textbf{两个方程在问题一解耦、
+    自问题二起强耦合}。}
+  \label{fig:physics}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/s08_conditions.pdf}
+  \caption{定解条件的构成（题面未给出，本文自建）。
+    初始条件 $T(r,0)=28\,^\circ$C、$C(r,0)=2.55$\,kg/kg；
+    中心 $r=0$ 取轴对称条件 $\partial_rT=\partial_rC=0$；
+    表面 $r=R$ 取第三类边界：换热由 $h$ 驱动、传质由 $h_m$ 驱动。
+    两式在量纲上自洽，但传质式的密度口径需要显式约定
+    （见第 \ref{sec:rho} 节）。}
+  \label{fig:conditions}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/s03_discretisation.pdf}
+  \caption{节点中心有限体积离散。(a) 网格与节点控制体：未知量取节点值、
+    扩散通量取界面值，格式在离散意义下守恒；
+    (b) 控制体权重的三处修正——中心控制体权重为 $h^2/8$、
+    内部为 $r_ih$、表面为 $\frac{h}{2}(R-\frac{h}{4})$，
+    若直接用 $r_ih$ 会把中心权重记成 $0$、表面权重放大一倍，
+    产生约 $1\%$ 的虚假守恒残差；
+    (c) 时间离散采用后向 Euler、非线性用 Picard 迭代线性化，
+    每一步最终都归结为一个三对角方程组。}
+  \label{fig:fvm}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/s04_flowchart.pdf}
+  \caption{四个问题共用的求解流程。外层按时间层推进，内层对变物性
+    $\rho,c_p,k,D$ 做 Picard 迭代，每轮迭代把"扩散＋对流＋第三类边界"
+    组装成三对角方程组并用追赶法求解；收敛判据为两个场的变化量
+    均小于 $10^{-11}$。问题三、四在此流程末尾追加"中心含水率是否低于
+    $0.15$"的判据。}
+  \label{fig:flowchart}
 \end{figure}
 
 模型形态由三个量决定。由附录 2 的物性可得热扩散率
@@ -761,7 +1240,7 @@ $0.0001\,^\circ$C，因为附件 1 中 $T_\infty(0)=28.000\,^\circ$C
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{figs/fig2_p1.pdf}
+  \includegraphics[width=\textwidth]{figs/d05_p1_fields.pdf}
   \caption{问题一温度场与水分浓度场的时空演化
     （节点中心有限体积，$N=400$、$\Delta t=1$\,s，
     图中纵轴为 21 个输出节点）。颜色即数值本身，无色差含义。
@@ -770,6 +1249,58 @@ $0.0001\,^\circ$C，因为附件 1 中 $T_\infty(0)=28.000\,^\circ$C
     (b) 水分变化被限制在最外侧约 $3\sim5$\,mm 的薄层内，
     中心含水率在四位小数内始终保持 2.5500\,kg/kg。}
   \label{fig:p1}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d06_p1_profiles.pdf}
+  \caption{问题一各报数时刻的径向剖面（即表 \ref{tab:p1-T}、
+    \ref{tab:p1-C} 的 $100$--$1800$\,s 七行）。
+    (a) 温度：整条剖面随时间整体抬升，且始终"外高内低"；
+    (b) 水分浓度：$0\sim1.0$\,cm 的曲线几乎完全重合，
+    只有 $1.5$\,cm 与 $2.0$\,cm 处明显下降，直观印证"水分只动了
+    最外侧 $3\sim5$\,mm"。两图均采用线型＋标记的双重编码，
+    黑白打印时仍可分辨各时刻。}
+  \label{fig:p1-profiles}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d07_p1_history.pdf}
+  \caption{问题一中心／中间／表面与烘房状态的时间历程。
+    (a) 温度：表面升温最快、中心最慢，$30$\,min 内中心由
+    $28.00\,^\circ$C 升到 $33.58\,^\circ$C、表面升到 $36.79\,^\circ$C；
+    (b) 水分浓度：表面由 $2.5500$ 降到 $1.5103$，而中心在 $30$\,min 内
+    仅变化 $0.0017$。"温度全场重分布、水分只动表层"的对比是预热平衡
+    阶段最本质的物理特征。}
+  \label{fig:p1-history}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d08_p1_scales.pdf}
+  \caption{特征扩散长度与扩散系数的量级对比。
+    (a) 热量的特征扩散长度 $\sqrt{\alpha t}$ 与水分 $\sqrt{Dt}$ 随时间的
+    变化：$1800$\,s 时前者达 $17.4$\,mm、已接近半径 $R=20$\,mm，
+    后者仅 $2.98$\,mm；
+    (b) 两个扩散系数 $\alpha=1.689\times10^{-7}$ 与
+    $D(C_0)=4.938\times10^{-9}$\,m$^2$/s 相差 $34.2$ 倍。
+    两个数即可解释"温度全场重分布、水分只动最外 $3\sim5$\,mm"，
+    也说明表面传质阻力不是限制环节。}
+  \label{fig:p1-scales}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d09_p1_conservation.pdf}
+  \caption{问题一的离散守恒性检验。(a) 模型守恒量
+    $Q=\int C\,\mathrm{d}V$ 的下降曲线与由表面累计通量
+    $\int A\,j\,\mathrm{d}t$ 反推的曲线完全重合；
+    (b) 两者之差（对数纵轴）始终处于机器精度量级，$1800$\,s 末态的
+    相对残差为 $6.8\times10^{-14}$。需要强调守恒量应是
+    $\int C\,\mathrm{d}V$ 而不是 $\int\rho_dC\,\mathrm{d}V$——
+    在本文采用的经典 Fick 口径下密度已被约去。}
+  \label{fig:p1-cons}
 \end{figure}
 
 \subsection{模型检验}
@@ -844,6 +1375,21 @@ $0.92$，与本文结果相差约 $40\%$。该差异不影响温度场（热质�
 趋于湿球温度，不可能低于该值。这说明按同一密度口径计算的水分通量比物理
 允许值大一个量级，两项不能同时采用。由此判定题面所给参数体系对应
 \emph{忽略汽化潜热}的简化模型，本文取式 \eqref{eq:p1-bc-heat} 的形式。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d32_energy.pdf}
+  \caption{能量自洽性核算：蒸发潜热需求与对流供热能力的对比
+    （按本文问题一解出的表面温度与表面含水率计算）。
+    (a) 对流供热 $hA(T_\infty-T_s)$ 只有 $0\sim5$\,W，
+    而按 $L_vAj_w$（$L_v=2.26\times10^6$\,J/kg、
+    $j_w=\rho_dh_m(C_s-C_\infty)$）估算的蒸发潜热需求高达 $27\sim33$\,W；
+    (b) 两者之比长期处于 $10^3\sim10^4$ 量级，远高于收支平衡线 $1$。
+    这说明\textbf{题面给定参数体系下潜热不可能自洽}：若强行计入，
+    表面温度会被压到湿球温度以下，违反热力学第二定律。
+    因此忽略汽化潜热不是随意的简化，而是题面参数的唯一自洽解读。}
+  \label{fig:energy}
+\end{figure}
 
 \subsection{本章小结}
 
@@ -1067,7 +1613,7 @@ $1.21\times10^6$\,J/(m$^3\cdot$K)），热扩散率随之提高；同时式
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{figs/fig3_p2.pdf}
+  \includegraphics[width=\textwidth]{figs/d10_p2_profiles.pdf}
   \caption{问题二 3\,h 内温度与水分浓度的径向剖面
     （附录 3 变物性耦合模型，$N=200$、$\Delta t=5$\,s，
     曲线取自 $0\sim2.0$\,cm 等距 21 个输出节点）。
@@ -1076,6 +1622,57 @@ $1.21\times10^6$\,J/(m$^3\cdot$K)），热扩散率随之提高；同时式
     (a) 2.5\,h 后温度趋于均匀，3\,h 时径向温差仅 0.12\,$^\circ$C；
     (b) 含水率始终保留由内向外的正梯度，说明过程由内部扩散控制。}
   \label{fig:p2}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d11_p2_fields.pdf}
+  \caption{问题二 3\,h 内两个场的时空演化。
+    (a) 温度：等温线迅速变得近乎水平，说明温度场很快趋于准稳态；
+    (b) 含水率：等值线是斜的，且干燥前沿随时间由表面向内部推进，
+    全过程保持"外干内湿"的单调剖面。两图均为矩阵数据，
+    采用感知均匀色图并附 colorbar，不构成"彩虹色图"式的误读。
+    白色点线标出表 \ref{tab:p2-T}、\ref{tab:p2-C} 的报数时刻。}
+  \label{fig:p2-field}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d12_p2_history.pdf}
+  \caption{问题二中心与表面的时间历程。
+    (a) 温度：约 2.5\,h 后药材温度基本追上烘房温度；
+    (b) 含水率：0.5\,h 时中心仍为 2.5499 而表面已降到 1.6491，
+    "由表及里"的次序清晰可见；
+    (c) 径向温差 $T(R)-T(0)$ 迅速衰减，3\,h 时仅 $0.12\,^\circ$C。
+    该图与下文表 \ref{tab:p2-T}、\ref{tab:p2-C} 的数字一一对应。}
+  \label{fig:p2-history}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d13_props.pdf}
+  \caption{附录 3、附录 4 的物性随含水率的变化
+    （竖直点线标出初值 $C_0=2.55$ 与判据 $C=0.15$）。
+    (a) 体积密度 $\rho$ 近似线性上升；
+    (b) 比热容 $c_p$、(c) 热传导系数 $k$ 均为 $C/(C+1)$ 的线性函数，
+    在 $C\to\infty$ 时趋于水的物性；
+    (d) 水分扩散系数 $D$ 从初值到判据值下降约两个数量级，
+    \textbf{这正是干燥后期"极慢"的根本原因}——$e^{-0.45/C}$ 一项在低
+    含水率下急剧衰减。四张子图共用同一横轴范围，便于横向比较。}
+  \label{fig:props}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d14_props_D.pdf}
+  \caption{水分扩散系数 $D$ 的两个依赖关系。
+    (a) 对温度的依赖：在 $28\to50\,^\circ$C 区间内各条曲线都是缓升的
+    指数函数，$\exp(-3850/T)$ 使 $D$ 整段增大约 $2.39$ 倍（$+139\%$），
+    与含水率带来的两个数量级相比是次要因素；
+    (b) 对含水率的依赖：$C$ 由 $2.55$ 降到 $0.15$ 时 $D$ 下降两个量级，
+    是主控因素。注意两图的纵轴均为对数轴，且附录 3、4 的 $D$ 相差约
+    两个数量级，口径不可混用。}
+  \label{fig:props-D}
 \end{figure}
 
 \subsection{模型检验}
@@ -1150,6 +1747,7 @@ $20\%$，烘干时长在 $48.9\sim70.0$\,h 之间摆动，跨度接近一整天�
 经验公式以\textbf{绝对温标 $T$（K）}为自变量，若误用摄氏度将造成数量级错误。
 
 \subsubsection{基于附件 2 实测数据的守恒性检验}
+\label{sec:drymass}
 
 前面的守恒检验、收敛性检验与交叉验证都属于模型内部的自治性检验。可用的
 实测数据只有附件 1（烘房边界）与附件 2（药材半径），二者在模型中分别充当
@@ -1179,11 +1777,28 @@ $20\%$，烘干时长在 $48.9\sim70.0$\,h 之间摆动，跨度接近一整天�
   \end{tabular}
 \end{table}
 
-结果表明：两组给定数据在干物质守恒意义下并不完全自洽。根源在于附录 3、4
+结果表明：两组给定数据在干物质守恒意义下存在固有张力。根源在于附录 3、4
 的密度经验式本身已内含收缩效应——干基密度 $\rho/(1+C)$ 随含水率下降由
-$275$ 升至 $582$\,kg/m$^3$；而问题二、三又要求固定半径，二者叠加便隐含了
-干物质质量的增长。这是题面给定数据之间的固有张力，并非本文模型引入；
-问题四因为直接采用了附件 2 的实际收缩，把不一致压缩到 $-26\%$ 以内。
+$275$ 升至 $582$\,kg/m$^3$（见第 \ref{sec:rho} 节）；而问题二、三又要求
+固定半径，二者叠加便隐含了干物质质量的增长。这是题面两组给定数据之间的
+固有张力，并非本文模型引入，也不是"题目有错"——按第 \ref{sec:rho} 节
+的分析，这两式各自都是合理的实验拟合式，只是隐含了不同的体积假设；
+问题四因为直接采用了附件 2 的实际收缩，把偏差压缩到 $-26\%$ 以内。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d25_dry_mass.pdf}
+  \caption{干物质质量的守恒性检验：按式
+    \eqref{eq:drysolid} 用已求得的 $C(r,t)$ 与附件 2 的实测 $R(t)$
+    反算单位长度的干料质量，并以其初值为基准归一。
+    左：问题三（固定半径、附录 3）的偏差单调增大到 $+116\%$；
+    右：问题四（含收缩、附录 4）在 $2$\,h 滑动平均后稳定在 $-7\%$ 附近
+    （未平滑的原始曲线因半径越过 $0.1$\,cm 网格线而带采样锯齿）。
+    \textbf{左图的系统性增长即"密度经验式隐含收缩"与"固定半径假设"
+    之间的矛盾在两问中的体现}，与图 \ref{fig:geo-shrink}(b) 半径对照
+    给出的 $-19.5\%$ 差异互为佐证。}
+  \label{fig:drymass}
+\end{figure}
 
 该结果说明两点。其一，本文给出的水分浓度场与烘干时长应理解为"题面给定
 数据体系下的自洽解"，而非绝对预测值；其二，若要求严格的质量守恒，应改用
@@ -1231,14 +1846,28 @@ $\rho_d$ 的守恒形式则缩短 $10.4\%$。
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{figs/fig6_sens.pdf}
+  \includegraphics[width=\textwidth]{figs/d24_sensitivity.pdf}
   \caption{(a) 关键参数 $\pm20\%$ 扰动对问题三烘干时长的影响
     （基准 57.32\,h，$N=100$、$\Delta t=5$\,s，即表 \ref{tab:grid-N}
     与表 \ref{tab:grid-dt} 中的同一组设定）；$h$ 的条形几乎为零宽，
-    故直接标注 $\approx0\%$。(b) 水分方程三种口径给出的烘干时长，
-    误差来源为方程口径而非数值误差。两图均为确定性计算结果，
-    不含统计误差，故不设误差棒。}
+    故直接标注 $\approx0\%$。(b) 各参数扰动工况的绝对烘干时长
+    （灰色虚线为基准 57.32\,h）：$D$ 的扰动把时长拉到 $48.9\sim70.0$\,h，
+    $h_m$ 只带来 $56.3\sim59.0$\,h，$h$ 几乎不动。
+    该排序说明\textbf{过程由内部水分扩散控制，表面换热阻力不是限制环节}。
+    两图均为确定性计算结果，不含统计误差，故不设误差棒。}
   \label{fig:sens}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d23_closures.pdf}
+  \caption{水分方程口径的对照。(a) 三种口径给出的问题三烘干时长：
+    本文采用的经典 Fick 形式为 $57.32$\,h，把体积密度 $\rho$ 写回水分方程
+    则为 $60.93$\,h，相差 $+6.3\%$；
+    (b) 该口径差在 $N=20$ 与 $N=100$ 两组网格下几乎相同，
+    证明它来自\textbf{模型口径}而非离散误差。
+    口径的物理含义与消去条件已在第 \ref{sec:rho} 节完整说明。}
+  \label{fig:closures}
 \end{figure}
 
 \section{烘干时间的确定（问题三）}
@@ -1295,6 +1924,21 @@ $\rho_d$ 的守恒形式则缩短 $10.4\%$。
 
 从表 \ref{tab:p3} 可以看出烘干过程的三个典型阶段。
 
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/s06_stages.pdf}
+  \caption{干燥三阶段的示意（用于说明概念，不是计算结果）。
+    (a) 含水率历程按"预热平衡 $\to$ 恒速干燥 $\to$ 降速干燥"三段划分，
+    红色点划线为 0.15\,kg/kg 判据；
+    (b) 对应的干燥速率曲线：恒速段的速率近似常数，
+    降速段的速率随含水率单调下降。
+    本文的实际结果（图 \ref{fig:p3-rate}）中\textbf{看不到恒速段平台}，
+    原因是题给的 $D=2.4\times10^{-3}e^{-0.45/C}e^{-3850/T}$
+    使扩散系数随含水率指数衰减，表面传质从未成为限制环节——
+    这正是本题区别于经典恒速干燥的一个特点。}
+  \label{fig:stages}
+\end{figure}
+
 \textbf{快速干燥段（$0\sim12$\,h）}：含水率大幅下降，中心由 $2.55$ 降到
 $0.4562$。此阶段表面水分充足，内部扩散是限制环节，干燥速率基本恒定。
 
@@ -1315,14 +1959,70 @@ $C(2\,\mathrm{cm})=0.0527$，表面已干燥到接近平衡而中心刚刚达标
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{figs/fig4_p3.pdf}
+  \includegraphics[width=\textwidth]{figs/d15_p3_curve.pdf}
   \caption{问题三干燥曲线：中心与表面水分浓度随时间的变化
     （$N=200$、$\Delta t=5$\,s，判据为各点 $C<0.15$\,kg/kg）。
     红色点划线为烘干判据 0.15\,kg/kg，阴影区依次为快速干燥段
     （0--12\,h）、降速干燥段（12--36\,h）与极慢干燥段
     （36--57.42\,h）；后者耗时 21\,h 却只换来 0.036\,kg/kg 的下降。
-    表面自 $14.2$\,h 起即已达标（占全程 $23\%$），全程由中心决定。}
+    表面自 $14.2$\,h 起即已达标（占全程 $23\%$），全程由中心决定。
+    竖向点线标出 $4$\,h 处的阶段转换（附件 1 结束、转入恒温
+    $50\,^\circ$C 工况）；右上角插图为 $45$\,h 之后的放大，
+    把"最后 $12$\,h 只降 $0.017$"这一反直觉结论直接呈现出来。}
   \label{fig:p3}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d16_p3_family.pdf}
+  \caption{问题三各径向位置的含水率历程族（$r=0,\ 0.5,\ 1.0,\ 1.5,\ 2.0$\,cm）。
+    五条曲线在 $10$\,h 之前彼此分离，之后逐渐收拢并长期并行下降；
+    最外层的 $2.0$\,cm 曲线最早穿越判据（约 $14.2$\,h），
+    中心 $0$\,cm 最晚（$57.42$\,h）。\textbf{判据的控制点始终是中心}，
+    这正是把"各处达标"等价为 $C(0,t)<0.15$ 的图形依据。}
+  \label{fig:p3-family}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d17_p3_field.pdf}
+  \caption{问题三全过程的含水率时空云图。(a) 线性色标：低含水率区间的
+    层次被压得很扁；(b) 对数色标并叠加 $C=0.15$ 等值线（红虚线），
+    可以清楚看到\textbf{干燥前沿由表面向中心推进}，等值线在
+    $57.4$\,h 才扫过中心轴。之所以并排给出两种色标，
+    是因为判据附近的数值区间很窄，只有对数刻度才看得出层次；
+    两图均附 colorbar 并标出单位。}
+  \label{fig:p3-field}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d18_p3_rate.pdf}
+  \caption{问题三的干燥速率。(a) 中心干燥速率
+    $-dC/dt$ 的时间历程，峰值 $0.445$\,h$^{-1}$ 出现在 $t\approx1.9$\,h
+    （此时表面水分充足、内部梯度最大）；$36$\,h 之后速率长期贴近
+    零，图中阴影区即"极慢干燥段"；(b) 干燥速率对含水率的曲线，
+    逆序横轴后可见随 $C$ 下降速率单调衰减，属典型\textbf{降速干燥}，
+    未出现恒速段平台——原因见第 \ref{sec:rho} 节与
+    图 \ref{fig:props}(d)：$D\propto e^{-0.45/C}$ 在低含水率下急剧变小，
+    内部扩散一直是限制环节。}
+  \label{fig:p3-rate}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d30_threshold.pdf}
+  \caption{烘干判据阈值的敏感性（$N=100$、$\Delta t=5$\,s 扫描）。
+    (a) 中心达标所需时间随阈值的变化：阈值越严，所需时间增长越快，
+    曲线在 $C^*$ 低于 $0.16$ 之后明显变陡；
+    对应的烘干时长为 $0.20\to31.5$\,h、$0.18\to38.3$\,h、
+    $0.16\to49.2$\,h、$0.15\to57.3$\,h、$0.13\to84.6$\,h；
+    (b) 相对题面判据 $0.15$ 的时长变化率：把阈值放宽到 $0.20$ 可省
+    $45\%$ 的时间，放宽到 $0.25$ 可省 $61\%$；而收紧到 $0.13$ 则要多耗
+    $48\%$。该图给出的是工艺建议的直接依据——\textbf{在满足品质要求的前提下，
+    判据每放宽 $0.01$\,kg/kg 都能带来可观的时间与能耗收益}，
+    且这一结论比单点结果更能体现模型的稳健性。}
+  \label{fig:threshold}
 \end{figure}
 
 \section{径向网格数 $N$ 对烘干时长的影响}
@@ -1400,7 +2100,7 @@ $h^2/8$、表面控制体的厚度只有 $h/2$，而干燥后期的水分剖面�
 本文在 $N=200$ 上求解、再插值到 $0.1$\,cm 的报告网格。
 
 \textbf{（2）口径差与网格无关。} 两列之差在五档网格上分别为
-$12880,\,12950,\,12975,\,12985,\,12990$\,s，相对差稳定在
+$12880$、$12950$、$12975$、$12985$、$12990$\,s，相对差稳定在
 $+6.28\%\sim+6.34\%$，$N=20$ 与 $N=400$ 之间只差 $0.06$ 个百分点。
 说明"水分方程用哪种口径"与"网格取多密"是两个相互独立的误差源，
 量级上近似可加。
@@ -1418,6 +2118,20 @@ $\{$口径 $\}\times\{$网格$\}$ 的组合解释，
 论文在主结果 $57.42$\,h 之外，同时给出 $61.02$\,h（同网格、
 变密度口径）与 $56.48$\,h（同口径、输出网格）两个参照值，
 以便复核者判断差异究竟来自模型口径、数值离散还是参数取值。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d31_grid_order.pdf}
+  \caption{网格收敛性的定量刻画（数据同表 \ref{tab:grid-N}）。
+    (a) 误差 $|t(N)-t_\infty|$ 对网格数 $N$ 的双对数图，
+    灰色虚线为斜率 $-1$ 的参考线，实测数据的观测阶为 $p=1.00$，
+    说明空间格式是一阶收敛（时间上采用后向 Euler，空间上采用节点中心
+    有限体积，一阶是符合预期的）；
+    (b) 烘干时长向 Richardson 外推极限 $t_\infty=57.494$\,h 单调收敛，
+    题目自带的输出网格 $N=20$ 偏低 $1.76\%$。
+    两图共同支持"求解网格必须细于输出网格"这一结论。}
+  \label{fig:grid-order}
+\end{figure}
 
 \section{时间步长 $\Delta t$ 对烘干时长的影响}
 \label{sec:timestep}
@@ -1471,6 +2185,19 @@ $3470$\,s（$-1.6\%$）。两者符号相反，量级差十倍。
 \textbf{（4）两项数值误差的上限。} 空间与时间离散的最大偏差分别为
 $1.6\%$ 与 $0.2\%$，合计不超过 $1.8\%$，
 仍小于口径差（$6.3\%$）与参数不确定度（$-15\%\sim+22\%$）。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d22_convergence.pdf}
+  \caption{空间与时间离散的收敛性（数据同表 \ref{tab:grid-N} 与
+    表 \ref{tab:grid-dt}）。(a) 固定 $\Delta t=5$\,s，改变径向控制体数
+    $N$：本文口径与"把 $\rho$ 写回水分方程"的变密度口径给出一对
+    相互平行的收敛曲线，说明\textbf{口径差是模型层面的平移}，
+    与网格无关；(b) 固定 $N=100$，把时间步放大 $24$ 倍，
+    烘干时长只改变 $0.20\%$，时间离散误差比空间离散小一个数量级。
+    两图均为确定性计算，不含统计误差。}
+  \label{fig:convergence}
+\end{figure}
 
 \section{界面系数的取法：为什么不用调和平均}
 \label{sec:face-avg}
@@ -1857,6 +2584,20 @@ $\dot R$ 在节点处跳变，会把间断引入对流项。因此本文采用
 它既保证 $C^1$ 连续，又保持数据的单调性、不产生过冲。
 收缩终止的时刻由数据本身决定，无需外推。
 
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/s05_xi_transform.pdf}
+  \caption{贴体坐标变换把动边界化为固定区域。
+    (a) 物理坐标下 $t=0$ 的初始态，网格均匀铺在 $r\in[0,R_0]$ 上；
+    (b) 物理坐标下收缩后的状态，半径缩到 $1.20$\,cm，
+    若仍用固定物理网格，最外侧节点会落到药材之外；
+    (c) 贴体坐标 $\xi=r/R(t)$ 下动边界恒为 $\xi=1$，
+    网格不随时间移动，代价是方程中多出一个
+    $\xi\dot R\,\partial C/\partial\xi$ 的对流项。
+    \textbf{这正是问题四与前三问在数值上的唯一结构性差别}。}
+  \label{fig:xi}
+\end{figure}
+
 \subsection{数值实现}
 
 空间离散仍用节点中心有限体积，但控制体权重变为
@@ -1927,7 +2668,7 @@ $w_i=\int\xi\,\mathrm{d}\xi$，即
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=\textwidth]{figs/fig5_p4.pdf}
+  \includegraphics[width=\textwidth]{figs/d19_p4_shrink.pdf}
   \caption{问题四：收缩历程与烘干时长的对照
     （附录 4 物性，$N=200$、$\Delta t=5$\,s）。
     (a) 附件 2 的实测半径（$n=145$，间隔 1800\,s，实测点以散点示出）
@@ -1936,6 +2677,35 @@ $w_i=\int\xi\,\mathrm{d}\xi$，即
     固定半径的对照工况需 137.20\,h，收缩使烘干时长缩短约 63\%。
     两图均为确定性数值结果，不含统计误差。}
   \label{fig:p4}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d20_p4_field.pdf}
+  \caption{问题四的含水率时空场与计算域变化。
+    (a) 在\textbf{固定物理位置}上给出的含水率云图：随着半径收缩，
+    $1.5$\,cm 与 $2.0$\,cm 两列先后失去定义（图中灰色区域），
+    这正是表 \ref{tab:p4} 中以"——"表示的原因，
+    也是题面模板允许留空的依据；
+    (b) 药材表面 $R(t)$ 与两条水平参考线的交点标出了
+    "哪些位置会在何时离开计算域"：$2.0$\,cm 处除初始时刻外均已越界，
+    $1.5$\,cm 处自 $3.6$\,h 起无定义（$1.0$\,cm 处始终在药材内部）。}
+  \label{fig:p4-field}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{figs/d21_p4_surface.pdf}
+  \caption{问题四的中心与表面历程。
+    (a) 中心与表面含水率：两者始终相差一个可观量，且表面先达标；
+    (b) 内外含水率之差 $C(R)-C(0)$（表面比中心干，故为负值）：
+    其绝对值在 $t\approx2.0$\,h 达到最大 $2.04$\,kg/kg，
+    之后随整体趋于平衡而单调回落到约 $0.10$，
+    说明\textbf{干燥前沿在最剧烈收缩的阶段最深}；
+    (c) 半径–含水率相轨（颜色为时间），与图
+    \ref{fig:radius-vs-c} 同一含义，此处直接取自问题四的解，
+    可看到半径在含水率还很高时就已经基本停止变化。}
+  \label{fig:p4-surface}
 \end{figure}
 
 \subsection{模型检验}
@@ -2002,7 +2772,7 @@ $w_i=\int\xi\,\mathrm{d}\xi$，即
   \item 完成了\textbf{参数灵敏度分析}与\textbf{基于附件 2 实测半径的
         守恒性检验}，前者证明结论对题给 $h$、$h_m$ 不敏感，
         后者如实报告了题面两组给定数据之间的不自洽，并给出了
-        完整的误差来源量级表（表 \ref{tab:err}）。
+        完整的误差来源量级表（表 \ref{tab:err}、\ref{tab:err2}）。
 \end{enumerate}
 
 \subsection{模型缺点}
@@ -2042,11 +2812,12 @@ $w_i=\int\xi\,\mathrm{d}\xi$，即
 
 上节的局限中，有的可以量化、有的只能定性说明。为便于复核与后续改进，
 本节把全部误差来源按"数值离散 / 数据 / 参数 / 模型口径"四类汇总于
-表 \ref{tab:err}，并给出每一项的量级及对结论的影响。
+表 \ref{tab:err}、\ref{tab:err2}，并给出每一项的量级及对结论的影响。
 
 \begin{table}[htbp]
   \centering
-  \caption{误差来源与量级汇总（"影响"指对四个问题最终结论的影响）}
+  \caption{误差来源与量级汇总（一）：数值与数据误差
+    （"影响"指对四个问题最终结论的影响）}
   \label{tab:err}
   \small
   \begin{tabular}{p{2.6cm}p{5.2cm}p{6.2cm}}
@@ -2074,6 +2845,18 @@ $w_i=\int\xi\,\mathrm{d}\xi$，即
       $0.007\sim0.027\,^\circ$C & 同上 \\
     数据：测量噪声 & $\sigma=0.116\,^\circ$C；30 个样本的均值涨落
       $0.02\,^\circ$C & 温度结果有效位降为 3 位 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \caption{误差来源与量级汇总（二）：参数、模型口径与简化假设}
+  \label{tab:err2}
+  \small
+  \begin{tabular}{p{2.6cm}p{5.2cm}p{6.2cm}}
+    \toprule
+    类别与来源 & 量级 & 对结论的影响 \\
     \midrule
     参数：扩散系数 $D$ & $\pm20\%$ 扰动 $\Rightarrow$ 烘干时长
       $+22.2\%$ / $-14.6\%$（$48.9\sim70.0$\,h）
@@ -2104,7 +2887,7 @@ $w_i=\int\xi\,\mathrm{d}\xi$，即
   \end{tabular}
 \end{table}
 
-表 \ref{tab:err} 给出三点判断。
+表 \ref{tab:err}、\ref{tab:err2} 给出三点判断。
 
 第一，\textbf{数值误差不是主要矛盾}。空间与时间离散、迭代收敛三项合起来
 对烘干时长的影响不足 $0.2\%$，界面上算术平均与对数平均之差（$0.18\%$，
@@ -2125,7 +2908,7 @@ $D$ 的 $\pm20\%$ 扰动即可让烘干时长在 $48.9\sim70.0$\,h 之间变化�
 需要说明的是，上述各项误差之间\textbf{不能简单线性叠加}：$D$ 以
 $e^{-0.45/C}e^{-3850/T}$ 的形式强非线性地进入方程，且干燥后期的
 含水率下降速率对 $D$ 极为敏感，误差传播本身是非线性的。
-表 \ref{tab:err} 给出的是单因素局部扰动结果，
+表 \ref{tab:err}、\ref{tab:err2} 给出的是单因素局部扰动结果，
 其线性外推只在 $\pm20\%$ 的扰动范围内近似成立。
 
 \subsection{模型改进与新模型建议}

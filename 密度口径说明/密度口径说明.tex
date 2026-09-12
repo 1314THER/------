@@ -1,0 +1,212 @@
+% !TEX program = xelatex
+% 2026 年高教社杯全国大学生数学建模竞赛 A 题（药材的烘干问题）
+% 补充说明：水分方程中密度 rho 的口径辨析
+
+\documentclass[12pt,a4paper,fontset=none]{ctexart}
+
+\usepackage{xeCJK}
+\setmainfont{Times New Roman}
+\setsansfont{Arial}
+\setCJKmainfont{Songti SC}
+\setCJKsansfont{Heiti SC}
+
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{geometry}
+\usepackage{caption}
+\usepackage{xcolor}
+
+\geometry{left=2.7cm,right=2.7cm,top=2.6cm,bottom=2.6cm}
+\captionsetup{font=small,labelsep=quad}
+\linespread{1.32}
+\allowdisplaybreaks
+
+\begin{document}
+
+\begin{center}
+  {\zihao{3}\bfseries 水分方程中密度 $\rho$ 的口径辨析}
+\end{center}
+
+\vspace{0.4em}
+\begin{center}
+  {\zihao{4}\bfseries 2026 年高教社杯全国大学生数学建模竞赛 A 题补充说明}
+\end{center}
+
+\vspace{1em}
+\noindent
+本文针对一个容易被忽略的建模问题——\textbf{体积密度 $\rho$ 是否需要出现在水分
+方程中}——作单独说明。题面附录 3、4 给出了 $\rho=\rho(C)$、$c_p=c_p(C)$、
+$k=k(C)$、$D=D(C,T)$ 的经验式，但水分控制方程本身并未给出，需要自行建立。
+本文给出推导依据、问题二/三与问题四的不同结论，以及口径选择带来的定量影响。
+
+\section{问题的提出与符号约定}
+
+题面把``水分浓度''定义为\textbf{干基含水率}
+\begin{equation}
+  C=\frac{m_w}{m_d}\quad(\mathrm{kg\ 水}/\mathrm{kg\ 干料}),
+\end{equation}
+而附录中的 $\rho$ 是\textbf{含水的体积密度}（单位体积内物料总质量）。二者基准
+不同，这是本题密度口径问题的根源。
+
+记干基体积密度（单位体积内的干料质量）为
+\begin{equation}
+  \rho_d=\frac{m_d}{V}=\frac{\rho}{1+C}.
+\end{equation}
+于是单位体积内的水量为
+\begin{equation}
+  \rho_w=\rho_d C=\frac{\rho C}{1+C},
+\end{equation}
+而\textbf{不是} $\rho C$。以附录 4（$\rho=760+90C$）为例，$C=2.55$ 时
+$\rho C\approx 2490$\,kg/m$^3$，比水的密度 1000\,kg/m$^3$ 和物料总密度
+$\rho\approx 989$\,kg/m$^3$ 都大，显然不能作为水浓度；正确的
+$\rho_d C=\rho C/(1+C)\approx 701$\,kg/m$^3$ 才是一个合理的含水体积浓度。
+因此，\textbf{若要在水分方程中引入密度，物理上应使用干基密度 $\rho_d$，
+而不是体积密度 $\rho$}。
+
+\section{水量守恒的一般形式}
+
+忽略轴向输运，圆柱坐标下一维径向的水量守恒可写为
+\begin{equation}
+  \frac{\partial}{\partial t}\left(\rho_d C\right)
+  =\frac{1}{r}\frac{\partial}{\partial r}
+   \left(\rho_d D\,r\frac{\partial C}{\partial r}\right),
+  \label{eq:cons}
+\end{equation}
+其中 $D$ 是针对干基含水率 $C$ 拟合的有效扩散系数（m$^2$/s）。
+式 \eqref{eq:cons} 是``密度参与水分方程''的严格形式。
+
+\section{问题二、三：$\rho$ 不出现（经典 Fick 形式）}
+
+问题二、三不考虑尺寸变化（半径恒为 $R=2$\,cm），干料骨架刚性。
+在式 \eqref{eq:cons} 中，若把干基密度 $\rho_d$ 视为常数（刚性骨架下干料
+体积不变、干料质量守恒），则 $\rho_d$ 在等式两侧约去，得到
+\begin{equation}
+  \frac{\partial C}{\partial t}
+  =\frac{1}{r}\frac{\partial}{\partial r}
+   \left(D\,r\frac{\partial C}{\partial r}\right).
+  \label{eq:fick}
+\end{equation}
+因此\textbf{问题二、三的水分方程采用式 \eqref{eq:fick}，体积密度 $\rho$
+不出现}。附录 3 给出的 $\rho(C)$、$c_p(C)$、$k(C)$ 用于热方程，即体积热容
+\begin{equation}
+  \rho c_p\frac{\partial T}{\partial t}
+  =\frac{1}{r}\frac{\partial}{\partial r}
+   \left(k\,r\frac{\partial T}{\partial r}\right),
+\end{equation}
+其中 $\rho$ 以 $\rho c_p$ 的形式进入热方程——这是 $\rho$ 在问题二、三中唯一
+出现的场所。
+
+\section{问题四：保留 $\rho$ 的守恒形式与对流项}
+
+问题四考虑失水收缩，半径 $R(t)$ 由附件 2 给定。此时物料体积随时间变化，
+密度随收缩与含水率共同变化，故\textbf{保留体积密度 $\rho$ 的守恒形式}
+\begin{equation}
+  \frac{\partial(\rho C)}{\partial t}
+  =\frac{1}{r}\frac{\partial}{\partial r}
+   \left(\rho D\,r\frac{\partial C}{\partial r}\right).
+  \label{eq:p4-cons}
+\end{equation}
+
+为处理动边界，引入贴体坐标 $\xi=r/R(t)$。由
+\begin{equation}
+  \left.\frac{\partial}{\partial t}\right|_{r}
+  =\left.\frac{\partial}{\partial t}\right|_{\xi}
+   -\frac{\xi\dot R}{R}\frac{\partial}{\partial\xi},
+  \qquad
+  \frac{\partial}{\partial r}=\frac{1}{R}\frac{\partial}{\partial\xi},
+  \qquad \dot R=\frac{\mathrm{d}R}{\mathrm{d}t}<0,
+\end{equation}
+代入式 \eqref{eq:p4-cons} 与热方程，并利用链式法则
+$\partial(\rho C)/\partial t=(\rho+C\,\mathrm{d}\rho/\mathrm{d}C)\partial C/\partial t$，
+得
+\begin{equation}
+  \rho c_p\,\xi R^2\frac{\partial T}{\partial t}
+  =\frac{\partial}{\partial\xi}
+   \left(k\,\xi\frac{\partial T}{\partial\xi}\right)
+   +\rho c_p\,\xi R\dot R\,\frac{\partial T}{\partial\xi},
+  \label{eq:p4-heat}
+\end{equation}
+\begin{equation}
+  \left(\rho+C\frac{\mathrm{d}\rho}{\mathrm{d}C}\right)\xi R^2
+   \frac{\partial C}{\partial t}
+  =\frac{\partial}{\partial\xi}
+   \left(\rho D\,\xi\frac{\partial C}{\partial\xi}\right)
+   +\left(\rho+C\frac{\mathrm{d}\rho}{\mathrm{d}C}\right)
+    \xi R\dot R\,\frac{\partial C}{\partial\xi}.
+  \label{eq:p4-mass}
+\end{equation}
+式 \eqref{eq:p4-heat}、\eqref{eq:p4-mass} 右端最后一项是贴体坐标变换带来的
+\textbf{对流项}，物理上对应材料被压缩（$\dot R<0$）对水分与热量的输运。
+$\dot R$ 由附件 2 经保单调三次 Hermite 插值（PCHIP）的解析导数给出，避免
+差分放大噪声。
+
+需要说明：式 \eqref{eq:p4-cons} 采用的是体积密度 $\rho$ 的守恒形式，与
+式 \eqref{eq:cons} 的干基密度 $\rho_d$ 形式并不完全相同。二者对烘干时长的影响
+在第 \ref{sec:sens} 节一并给出。
+
+\section{口径敏感性}
+\label{sec:sens}
+
+水分方程究竟采用哪种密度口径，是题面未规定、需要建模者自行声明的选择。
+以问题三为例（$N=100$、$\Delta t=5$\,s），三种口径的烘干时长如表
+\ref{tab:clos} 所示。
+
+\begin{table}[htbp]
+  \centering
+  \caption{水分方程口径对问题三烘干时长的影响（$N=100$、$\Delta t=5$\,s）}
+  \label{tab:clos}
+  \small
+  \begin{tabular}{lcc}
+    \toprule
+    水分方程口径 & 烘干时长/h & 相对 Fick 基准 \\
+    \midrule
+    经典 Fick：$\partial C/\partial t=\nabla\!\cdot\!(D\nabla C)$（本文问题二/三）
+      & 57.32 & --- \\
+    体积密度守恒：$\partial(\rho C)/\partial t=\nabla\!\cdot\!(\rho D\nabla C)$
+      & 60.93 & $+6.3\%$ \\
+    干基密度守恒：$\partial(\rho_d C)/\partial t=\nabla\!\cdot\!(\rho_d D\nabla C)$
+      & 51.39 & $-10.4\%$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+三种口径给出的烘干时长都在题面所述 $2\sim3$ 天量级附近，定性结论不变；
+但口径差（$+6.3\%\sim-10.4\%$）大于网格与时间步带来的数值误差，
+因此本文在正文中明确声明所采用的口径。其中干基密度守恒口径
+$\partial(\rho_d C)/\partial t=\nabla\!\cdot\!(\rho_d D\nabla C)$ 展开后等效于
+把扩散系数放大到约 $(1+C)D$，故烘干时间最短；体积密度口径的等效扩散系数为
+$\rho D/(\rho+C\rho')$，在高含水率处约为 $0.75D$，故烘干时间最长。
+
+\section{数值结果}
+
+在本文最终采用的组合下，各问题的烘干时长（$N=200$、$\Delta t=5$\,s）为
+
+\begin{center}
+\small
+\begin{tabular}{lcc}
+  \toprule
+  问题 & 口径 & 烘干时长 \\
+  \midrule
+  问题三 & 经典 Fick（$\rho$ 不进水分方程） & $57.42$\,h $=2.392$ 天 \\
+  问题四 & 体积密度守恒 $+$ 对流项 & $50.31$\,h $=2.096$ 天 \\
+  问题四（固定半径对照） & 体积密度守恒 & $5.72$ 天 \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\section{结论}
+
+\begin{enumerate}
+  \item 题面的水分浓度 $C$ 是干基含水率，$\rho$ 是含水的体积密度，二者基准
+        不同；严格的水量守恒应使用干基密度 $\rho_d=\rho/(1+C)$。
+  \item 问题二、三骨架刚性、半径不变，$\rho_d$ 可视为常数并在水分方程两侧约去，
+        故采用经典 Fick 形式，\textbf{体积密度 $\rho$ 不进入水分方程}，
+        只以 $\rho c_p$ 进入热方程。
+  \item 问题四存在收缩，密度随收缩与含水率变化，故\textbf{保留体积密度
+        $\rho$ 的守恒形式}，并在贴体坐标下引入对流项。
+  \item 密度口径对烘干时长的影响为 $+6.3\%\sim-10.4\%$，大于数值离散误差，
+        建模时应明确声明所采用的口径。
+\end{enumerate}
+
+\end{document}
